@@ -1,0 +1,5 @@
+{
+  "name": "Sperktar SCM Manager",
+  "description": "An automated messaging and dues management system for SCM Nigeria, featuring automated payment reconciliation, defaulter tracking, and smart WhatsApp/SMS messaging.",
+  "requestFramePermissions": []
+}
