@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {  Member } from '@/types';
-
+import { Member } from '@/types';
 
 interface MembersState {
   members: Member[];
@@ -12,7 +11,7 @@ interface MembersState {
 }
 
 const initialState: MembersState = {
-  members: [] ,
+  members: [],
   filteredMembers: [],
   searchTerm: '',
   member: null,
@@ -20,18 +19,16 @@ const initialState: MembersState = {
   isDrawerOpen: false,
 };
 
-
-
-
 const membersSlice = createSlice({
   name: 'members',
   initialState,
   reducers: {
     setSearchTerm: (state, action: PayloadAction<string>) => {
       state.searchTerm = action.payload;
-      state.filteredMembers = state.members.filter(m =>
-        m.name.toLowerCase().includes(action.payload.toLowerCase()) ||
-        m.phoneNumber.toLowerCase().includes(action.payload.toLowerCase())
+      state.filteredMembers = state.members.filter(
+        (m) =>
+          m.name.toLowerCase().includes(action.payload.toLowerCase()) ||
+          m.phoneNumber.toLowerCase().includes(action.payload.toLowerCase())
       );
     },
     setSelectedMember: (state, action: PayloadAction<Member | null>) => {
@@ -48,9 +45,10 @@ const membersSlice = createSlice({
       state.members.push(...action.payload);
       // Update filtered members based on current search term
       if (state.searchTerm) {
-        state.filteredMembers = [...state.members].filter(m =>
-          m.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-          m.phoneNumber.toLowerCase().includes(state.searchTerm.toLowerCase())
+        state.filteredMembers = [...state.members].filter(
+          (m) =>
+            m.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+            m.phoneNumber.toLowerCase().includes(state.searchTerm.toLowerCase())
         );
       } else {
         state.filteredMembers = state.members;
@@ -61,7 +59,7 @@ const membersSlice = createSlice({
       state.filteredMembers = action.payload;
     },
     updateMember: (state, action: PayloadAction<Member>) => {
-      const index = state.members.findIndex(m => m.id === action.payload.id);
+      const index = state.members.findIndex((m) => m.id === action.payload.id);
       if (index !== -1) {
         state.members[index] = action.payload;
         state.filteredMembers = state.members;
@@ -71,17 +69,15 @@ const membersSlice = createSlice({
     toggleAddMember: (state) => {
       state.isAddMemberDrawerOpen = !state.isAddMemberDrawerOpen;
     },
-
   },
-
 });
 
-export const { 
-  setSearchTerm, 
-  setSelectedMember, 
-  addMember, 
+export const {
+  setSearchTerm,
+  setSelectedMember,
+  addMember,
   setMembers,
-  updateMember, 
+  updateMember,
   toggleAddMember,
   toggleMemberDrawer,
 } = membersSlice.actions;

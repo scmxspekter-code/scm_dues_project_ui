@@ -74,10 +74,7 @@ export const Input: React.FC<InputProps> = ({
       {label && (
         <label
           htmlFor={inputId}
-          className={classNames(
-            'block text-sm font-bold text-slate-700',
-            labelClassName
-          )}
+          className={classNames('block text-sm font-bold text-slate-700', labelClassName)}
         >
           {label}
         </label>
@@ -112,13 +109,9 @@ export const Input: React.FC<InputProps> = ({
         )}
       </div>
 
-      {hasError && (
-        <p className="text-xs text-red-500 font-medium mt-1">{error}</p>
-      )}
+      {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}
 
-      {helperText && !hasError && (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="text-xs text-slate-500 mt-1">{helperText}</p>}
     </div>
   );
 };

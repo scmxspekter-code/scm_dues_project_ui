@@ -54,21 +54,21 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   const handleItemClick = (item: DropdownItem) => {
     if (item.disabled) return;
-    
+
     if (item.onClick) {
       item.onClick();
     }
-    
+
     if (onItemClick) {
       onItemClick(item);
     }
-    
+
     setIsOpen(false);
   };
 
   const getPlacementClasses = () => {
     const baseClasses = 'absolute z-50 min-w-[200px]';
-    
+
     // If position is provided, use it (simpler positioning)
     if (position) {
       switch (position) {
@@ -84,7 +84,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           return `${baseClasses} top-full left-0 mt-2`;
       }
     }
-    
+
     // Otherwise, use the legacy placement prop
     switch (placement) {
       case 'bottom-right':
@@ -108,10 +108,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <>
           {/* Backdrop for mobile */}
-          <div
-            className="fixed inset-0 z-40 lg:hidden"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setIsOpen(false)} />
 
           {/* Dropdown Menu */}
           <div
@@ -125,10 +122,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
               {items.map((item, index) => {
                 if (item.divider) {
                   return (
-                    <div
-                      key={`divider-${index}`}
-                      className="my-1 border-t border-slate-100"
-                    />
+                    <div key={`divider-${index}`} className="my-1 border-t border-slate-100" />
                   );
                 }
 
@@ -149,9 +143,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                       item.className
                     )}
                   >
-                    {item.icon && (
-                      <span className="flex-shrink-0 text-slate-400">{item.icon}</span>
-                    )}
+                    {item.icon && <span className="flex-shrink-0 text-slate-400">{item.icon}</span>}
                     <span className="flex-1">{item.label}</span>
                   </button>
                 );

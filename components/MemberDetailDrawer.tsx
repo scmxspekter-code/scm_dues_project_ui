@@ -1,11 +1,24 @@
 import React, { useEffect } from 'react';
-import { X, User, Mail, Phone, Calendar, DollarSign, CreditCard, Bell, Edit, MessageSquare, History, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import {
+  X,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  DollarSign,
+  CreditCard,
+  Bell,
+  Edit,
+  MessageSquare,
+  History,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+} from 'lucide-react';
 import classNames from 'classnames';
 import { PaymentStatus } from '../types';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleMemberDrawer } from '@/store/slices/membersSlice';
-import { is } from 'date-fns/locale';
-
 
 export const MemberDetailDrawer: React.FC = () => {
   const { member, isDrawerOpen } = useAppSelector((state) => state.members);
@@ -52,10 +65,10 @@ export const MemberDetailDrawer: React.FC = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -63,19 +76,18 @@ export const MemberDetailDrawer: React.FC = () => {
     dispatch(toggleMemberDrawer());
   };
 
- 
-
   return (
     <>
       {/* Backdrop */}
-      {isDrawerOpen&&(
+      {isDrawerOpen && (
         <div
-          className={classNames ("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out ",  {'opacity-100':isDrawerOpen })}
+          className={classNames(
+            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out ',
+            { 'opacity-100': isDrawerOpen }
+          )}
           onClick={handleClose}
         />
-
       )}
-  
 
       {/* Drawer */}
       <div
@@ -110,10 +122,12 @@ export const MemberDetailDrawer: React.FC = () => {
           <div className="flex-1 p-6 space-y-6">
             {/* Status Badge */}
             <div className="flex items-center justify-between">
-              <div className={classNames(
-                'flex items-center space-x-2 px-4 py-2 rounded-xl border font-bold',
-                getStatusColor(member?.status || PaymentStatus.PENDING)
-              )}>
+              <div
+                className={classNames(
+                  'flex items-center space-x-2 px-4 py-2 rounded-xl border font-bold',
+                  getStatusColor(member?.status || PaymentStatus.PENDING)
+                )}
+              >
                 {getStatusIcon(member?.status || PaymentStatus.PENDING)}
                 <span>{member?.status}</span>
               </div>
@@ -142,14 +156,16 @@ export const MemberDetailDrawer: React.FC = () => {
             {/* Basic Information */}
             <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
               <h3 className="text-lg font-bold text-slate-800 mb-4">Basic Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-start space-x-3">
                   <div className="p-2 bg-white rounded-lg">
                     <User className="text-cyan-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Full Name
+                    </p>
                     <p className="text-slate-800 font-semibold mt-1">{member?.name}</p>
                   </div>
                 </div>
@@ -159,7 +175,9 @@ export const MemberDetailDrawer: React.FC = () => {
                     <Mail className="text-cyan-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Email
+                    </p>
                     <p className="text-slate-800 font-semibold mt-1">{member?.email || 'N/A'}</p>
                   </div>
                 </div>
@@ -169,7 +187,9 @@ export const MemberDetailDrawer: React.FC = () => {
                     <Phone className="text-cyan-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Phone
+                    </p>
                     <p className="text-slate-800 font-semibold mt-1">{member?.phoneNumber}</p>
                   </div>
                 </div>
@@ -179,8 +199,12 @@ export const MemberDetailDrawer: React.FC = () => {
                     <Calendar className="text-cyan-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joined Date</p>
-                    <p className="text-slate-800 font-semibold mt-1">{formatDate(member?.joinedDate || '')}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Joined Date
+                    </p>
+                    <p className="text-slate-800 font-semibold mt-1">
+                      {formatDate(member?.joinedDate || '')}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -189,15 +213,19 @@ export const MemberDetailDrawer: React.FC = () => {
             {/* Payment Information */}
             <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
               <h3 className="text-lg font-bold text-slate-800 mb-4">Payment Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-start space-x-3">
                   <div className="p-2 bg-white rounded-lg">
                     <DollarSign className="text-cyan-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Amount Due</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">₦{member?.amount.toLocaleString()}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Amount Due
+                    </p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      ₦{member?.amount.toLocaleString()}
+                    </p>
                   </div>
                 </div>
 
@@ -207,8 +235,12 @@ export const MemberDetailDrawer: React.FC = () => {
                       <CreditCard className="text-cyan-600" size={20} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Last Payment</p>
-                      <p className="text-slate-800 font-semibold mt-1">{formatDate(member?.lastPaymentDate || '')}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Last Payment
+                      </p>
+                      <p className="text-slate-800 font-semibold mt-1">
+                        {formatDate(member?.lastPaymentDate || '')}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -227,7 +259,7 @@ export const MemberDetailDrawer: React.FC = () => {
                     {member?.reminderHistory?.length || 0} Sent
                   </span>
                 </div>
-                
+
                 <div className="space-y-3">
                   {member?.reminderHistory?.map((reminder) => (
                     <div
@@ -251,7 +283,7 @@ export const MemberDetailDrawer: React.FC = () => {
                         <span
                           className={classNames(
                             'px-2 py-1 rounded-full text-xs font-bold',
-                            reminder.status === 'Delivered' 
+                            reminder.status === 'Delivered'
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-red-50 text-red-600'
                           )}

@@ -1,18 +1,13 @@
-import React from "react";
-import {
-  HashRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import { Layout } from "./components/Layout";
-import { Dashboard } from "./pages/Dashboard";
-import { Members } from "./pages/Members";
-import { Messaging } from "./pages/Messaging";
-import { Defaulters } from "./pages/Defaulters";
-import { Login } from "./pages/Login";
-import { AuthInitializer } from "./components/AuthInitializer";
-import { useAppSelector } from "./store/hooks";
+import React from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Layout } from './components/Layout';
+import { Dashboard } from './pages/Dashboard';
+import { Members } from './pages/Members';
+import { Messaging } from './pages/Messaging';
+import { Defaulters } from './pages/Defaulters';
+import { Login } from './pages/Login';
+import { AuthInitializer } from './components/AuthInitializer';
+import { useAppSelector } from './store/hooks';
 
 const App: React.FC = () => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -22,7 +17,6 @@ const App: React.FC = () => {
       {!isAuthenticated ? (
         <Login />
       ) : (
-
         <Router>
           <Layout>
             <Routes>

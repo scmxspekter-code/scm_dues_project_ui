@@ -26,7 +26,10 @@ const initialState: MessagingState = {
 
 export const sendMessage = createAsyncThunk(
   'messaging/sendMessage',
-  async (payload: { recipientType: RecipientType; channel: Channel; message: string }, { rejectWithValue }) => {
+  async (
+    payload: { recipientType: RecipientType; channel: Channel; message: string },
+    { rejectWithValue }
+  ) => {
     try {
       // TODO: Replace with actual API call
       // const { $api } = await import('@/api');
@@ -34,7 +37,7 @@ export const sendMessage = createAsyncThunk(
       // return response.data;
 
       // Mock for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const newMessage: MessageLog = {
         id: Date.now().toString(),
         recipient: payload.recipientType,
@@ -60,7 +63,7 @@ export const fetchMessageHistory = createAsyncThunk(
       // return response.data;
 
       // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const mockHistory: MessageLog[] = [
         {
           id: '1',
@@ -138,5 +141,12 @@ const messagingSlice = createSlice({
   },
 });
 
-export const { setRecipientType, setChannel, setMessage, setIsGenerating, clearMessage, clearError } = messagingSlice.actions;
+export const {
+  setRecipientType,
+  setChannel,
+  setMessage,
+  setIsGenerating,
+  clearMessage,
+  clearError,
+} = messagingSlice.actions;
 export default messagingSlice.reducer;

@@ -38,18 +38,19 @@ export const Pagination: React.FC<PaginationProps> = ({
   const totalPages = meta?.pageCount ?? legacyTotalPages;
   const totalItems = meta?.total ?? legacyTotalItems;
   const itemsPerPage = meta?.perPage ?? legacyItemsPerPage;
-  const hasPrevPage = meta?.hasPrevPage ?? (currentPage > 1);
-  const hasNextPage = meta?.hasNextPage ?? (currentPage < (totalPages ?? 1));
-  const pagingCounter = meta?.pagingCounter ?? ((currentPage - 1) * itemsPerPage + 1);
-  
+  const hasPrevPage = meta?.hasPrevPage ?? currentPage > 1;
+  const hasNextPage = meta?.hasNextPage ?? currentPage < (totalPages ?? 1);
+  const pagingCounter = meta?.pagingCounter ?? (currentPage - 1) * itemsPerPage + 1;
+
   // Calculate total pages if not provided
-  const calculatedTotalPages = totalPages ?? (totalItems ? Math.ceil(totalItems / itemsPerPage) : 1);
+  const calculatedTotalPages =
+    totalPages ?? (totalItems ? Math.ceil(totalItems / itemsPerPage) : 1);
 
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const maxVisiblePages = 7;
-    
+
     if (calculatedTotalPages <= maxVisiblePages) {
       // Show all pages if total is less than max visible
       for (let i = 1; i <= calculatedTotalPages; i++) {
@@ -92,7 +93,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   const handlePrevious = () => {
     if (disabled || !hasPrevPage) return;
-    
+
     if (meta?.previousPage !== null && meta?.previousPage !== undefined) {
       onPageChange(meta.previousPage);
     } else if (currentPage > 1) {
@@ -102,7 +103,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   const handleNext = () => {
     if (disabled || !hasNextPage) return;
-    
+
     if (meta?.nextPage !== null && meta?.nextPage !== undefined) {
       onPageChange(meta.nextPage);
     } else if (currentPage < calculatedTotalPages) {
@@ -123,14 +124,22 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className={classNames('flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50', className, {
-      'opacity-50 pointer-events-none': disabled,
-    })}>
+    <div
+      className={classNames(
+        'flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50',
+        className,
+        {
+          'opacity-50 pointer-events-none': disabled,
+        }
+      )}
+    >
       {/* Items info */}
-      <div className={classNames('text-sm', {
-        'text-slate-600': !disabled,
-        'text-slate-400': disabled,
-      })}>
+      <div
+        className={classNames('text-sm', {
+          'text-slate-600': !disabled,
+          'text-slate-400': disabled,
+        })}
+      >
         {totalItems !== undefined && startItem !== undefined && endItem !== undefined ? (
           <span>
             Showing <span className="font-bold text-slate-800">{startItem}</span> to{' '}
@@ -150,19 +159,24 @@ export const Pagination: React.FC<PaginationProps> = ({
         {/* Items per page selector */}
         {showItemsPerPage && onItemsPerPageChange && (
           <div className="flex items-center gap-2 mr-4">
-            <span className={classNames('text-sm', {
-              'text-slate-600': !disabled,
-              'text-slate-400': disabled,
-            })}>Show:</span>
+            <span
+              className={classNames('text-sm', {
+                'text-slate-600': !disabled,
+                'text-slate-400': disabled,
+              })}
+            >
+              Show:
+            </span>
             <Dropdown
-            position="top"
+              position="top"
               trigger={
-                <button 
+                <button
                   disabled={disabled}
                   className={classNames(
                     'flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 font-medium transition-colors',
                     {
-                      'hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer': !disabled,
+                      'hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer':
+                        !disabled,
                       'cursor-not-allowed opacity-50': disabled,
                     }
                   )}
@@ -174,7 +188,10 @@ export const Pagination: React.FC<PaginationProps> = ({
               items={itemsPerPageOptions.map((option) => ({
                 label: `${option} per page`,
                 value: option.toString(),
-                icon: option === itemsPerPage ? <Check size={16} className="text-cyan-600" /> : undefined,
+                icon:
+                  option === itemsPerPage ? (
+                    <Check size={16} className="text-cyan-600" />
+                  ) : undefined,
                 onClick: () => handleItemsPerPageChange(option),
                 className: option === itemsPerPage ? 'bg-cyan-50 text-cyan-600 font-bold' : '',
                 disabled: disabled,
@@ -189,13 +206,12 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={handlePrevious}
           disabled={disabled || !hasPrevPage}
-          className={classNames(
-            'p-2 rounded-lg border transition-colors',
-            {
-              'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer': hasPrevPage && !disabled,
-              'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed': !hasPrevPage || disabled,
-            }
-          )}
+          className={classNames('p-2 rounded-lg border transition-colors', {
+            'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
+              hasPrevPage && !disabled,
+            'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
+              !hasPrevPage || disabled,
+          })}
           aria-label="Previous page"
         >
           <ChevronLeft size={18} />
@@ -206,10 +222,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           {pageNumbers.map((page, index) => {
             if (page === 'ellipsis') {
               return (
-                <span
-                  key={`ellipsis-${index}`}
-                  className="px-3 py-1.5 text-slate-400 font-medium"
-                >
+                <span key={`ellipsis-${index}`} className="px-3 py-1.5 text-slate-400 font-medium">
                   ...
                 </span>
               );
@@ -227,8 +240,10 @@ export const Pagination: React.FC<PaginationProps> = ({
                   'min-w-[36px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                   {
                     'bg-cyan-600 text-white': isActive && !disabled,
-                    'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 cursor-pointer': !isActive && !disabled,
-                    'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed': disabled,
+                    'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 cursor-pointer':
+                      !isActive && !disabled,
+                    'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed':
+                      disabled,
                   }
                 )}
                 aria-label={`Go to page ${pageNum}`}
@@ -244,13 +259,12 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={handleNext}
           disabled={disabled || !hasNextPage}
-          className={classNames(
-            'p-2 rounded-lg border transition-colors',
-            {
-              'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer': hasNextPage && !disabled,
-              'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed': !hasNextPage || disabled,
-            }
-          )}
+          className={classNames('p-2 rounded-lg border transition-colors', {
+            'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
+              hasNextPage && !disabled,
+            'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
+              !hasNextPage || disabled,
+          })}
           aria-label="Next page"
         >
           <ChevronRight size={18} />

@@ -36,8 +36,18 @@ const iconPadding = {
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -73,13 +83,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const getCalendarDays = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
-    const days: Array<{ date: Date; isCurrentMonth: boolean; isToday: boolean; isSelected: boolean }> = [];
+    const days: Array<{
+      date: Date;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      isSelected: boolean;
+    }> = [];
 
     // Previous month's days
     const prevMonth = new Date(year, month - 1, 0);
@@ -169,7 +184,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   const handleDateSelect = (date: Date) => {
     if (isDisabled(date)) return;
-    
+
     const formattedDate = formatDate(date);
     if (onChange) {
       onChange(formattedDate);
@@ -227,12 +242,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   return (
     <div className={classNames('space-y-2', containerClassName)} ref={datePickerRef}>
       {label && (
-        <label
-          className={classNames(
-            'block text-sm font-bold text-slate-700',
-            labelClassName
-          )}
-        >
+        <label className={classNames('block text-sm font-bold text-slate-700', labelClassName)}>
           {label}
         </label>
       )}
@@ -261,10 +271,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             className
           )}
         >
-          <span className={classNames('flex-1 truncate', {
-            'text-slate-400': !value,
-            'text-slate-700': value,
-          })}>
+          <span
+            className={classNames('flex-1 truncate', {
+              'text-slate-400': !value,
+              'text-slate-700': value,
+            })}
+          >
             {value ? formatDisplayDate(value) : placeholder}
           </span>
           {value && !disabled && (
@@ -281,9 +293,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </button>
 
         {/* Hidden input for form compatibility */}
-        {name && (
-          <input type="hidden" name={name} value={value || ''} />
-        )}
+        {name && <input type="hidden" name={name} value={value || ''} />}
 
         {/* Calendar Dropdown */}
         {isOpen && (
@@ -325,10 +335,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {/* Days of week header */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {daysOfWeek.map((day) => (
-                  <div
-                    key={day}
-                    className="text-center text-xs font-bold text-slate-400 py-2"
-                  >
+                  <div key={day} className="text-center text-xs font-bold text-slate-400 py-2">
                     {day}
                   </div>
                 ))}
@@ -345,11 +352,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     className={classNames(
                       'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all',
                       {
-                        'text-slate-400 cursor-not-allowed': !day.isCurrentMonth || isDisabled(day.date),
-                        'text-slate-700 hover:bg-slate-100': day.isCurrentMonth && !day.isSelected && !day.isToday && !isDisabled(day.date),
+                        'text-slate-400 cursor-not-allowed':
+                          !day.isCurrentMonth || isDisabled(day.date),
+                        'text-slate-700 hover:bg-slate-100':
+                          day.isCurrentMonth &&
+                          !day.isSelected &&
+                          !day.isToday &&
+                          !isDisabled(day.date),
                         'bg-cyan-600 text-white font-bold': day.isSelected,
-                        'bg-cyan-50 text-cyan-600 font-bold ring-2 ring-cyan-200': day.isToday && !day.isSelected,
-                        'hover:bg-cyan-100': day.isCurrentMonth && !isDisabled(day.date) && !day.isSelected,
+                        'bg-cyan-50 text-cyan-600 font-bold ring-2 ring-cyan-200':
+                          day.isToday && !day.isSelected,
+                        'hover:bg-cyan-100':
+                          day.isCurrentMonth && !isDisabled(day.date) && !day.isSelected,
                       }
                     )}
                   >
@@ -362,13 +376,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         )}
       </div>
 
-      {hasError && (
-        <p className="text-xs text-red-500 font-medium mt-1">{error}</p>
-      )}
+      {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}
 
-      {helperText && !hasError && (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="text-xs text-slate-500 mt-1">{helperText}</p>}
     </div>
   );
 };

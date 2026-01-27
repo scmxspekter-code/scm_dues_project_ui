@@ -48,10 +48,7 @@ export const Select: React.FC<SelectProps> = ({
       {label && (
         <label
           htmlFor={selectId}
-          className={classNames(
-            'block text-sm font-bold text-slate-700',
-            labelClassName
-          )}
+          className={classNames('block text-sm font-bold text-slate-700', labelClassName)}
         >
           {label}
         </label>
@@ -93,23 +90,14 @@ export const Select: React.FC<SelectProps> = ({
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </div>
 
-      {hasError && (
-        <p className="text-xs text-red-500 font-medium mt-1">{error}</p>
-      )}
+      {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}
 
-      {helperText && !hasError && (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="text-xs text-slate-500 mt-1">{helperText}</p>}
     </div>
   );
 };

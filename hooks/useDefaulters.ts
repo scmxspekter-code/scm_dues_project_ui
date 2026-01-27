@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Member, PaginationMeta, PaymentStatus } from '../types';
-import { setDefaulters, toggleDefaulterDrawer, setSelectedDefaulter as setSelectedDefaulterAction } from '@/store/slices/defaultersSlice';
+import {
+  setDefaulters,
+  toggleDefaulterDrawer,
+  setSelectedDefaulter as setSelectedDefaulterAction,
+} from '@/store/slices/defaultersSlice';
 import { $api } from '@/api';
 import { IReportParams } from '@/api/defaulter.repository';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -17,9 +21,9 @@ export const useDefaulters = () => {
   });
   const dispatch = useAppDispatch();
   const { defaulters } = useAppSelector((state) => state.defaulters);
-  
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
@@ -57,10 +61,10 @@ export const useDefaulters = () => {
 
   const getDefaulters = async (params: IReportParams) => {
     try {
-      setApiState(prev => ({...prev, defaulters: true}));
+      setApiState((prev) => ({ ...prev, defaulters: true }));
       const response = await $api.defaulters.getDefaulters(params);
       dispatch(setDefaulters(response.data!));
-      
+
       // Set pagination meta if available
       if (response.meta) {
         setPaginationMeta(response.meta);
@@ -69,25 +73,24 @@ export const useDefaulters = () => {
       toast.error(error.message || 'Failed to fetch defaulters');
       throw error;
     } finally {
-      setApiState(prev => ({...prev, defaulters: false}));
+      setApiState((prev) => ({ ...prev, defaulters: false }));
     }
   };
-const getMessageHistory = async (id:string) => {
-  try {
-    const response = await $api.messaging.getMessageHistory(id);
-    return response.data;
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to fetch message history');
-    throw error;
-  }
-};
+  const getMessageHistory = async (id: string) => {
+    try {
+      const response = await $api.messaging.getMessageHistory(id);
+      return response.data;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch message history');
+      throw error;
+    }
+  };
   // Fetch defaulters when page, items per page, search term, or sort changes
   useEffect(() => {
     getDefaulters({
       page: currentPage,
       limit: itemsPerPage,
       search: debouncedSearchTerm || undefined,
-  
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, itemsPerPage, debouncedSearchTerm, debouncedSortField, debouncedSortOrder]);
@@ -104,7 +107,7 @@ const getMessageHistory = async (id:string) => {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Toggle order if same field
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       // Set new field with default desc order
       setSortField(field);
@@ -122,8 +125,8 @@ const getMessageHistory = async (id:string) => {
 
   const handleExport = async () => {
     try {
-      setApiState(prev => ({...prev, defaultersReport: true}));
-      
+      setApiState((prev) => ({ ...prev, defaultersReport: true }));
+
       // Fetch all defaulters for export (no pagination)
       const response = await $api.defaulters.getDefaulters({
         limit: 10000, // Large limit to get all
@@ -131,32 +134,39 @@ const getMessageHistory = async (id:string) => {
       });
 
       const defaultersToExport = response.data || [];
-      
-      // Create CSV content
-      const headers = "ID,Name,Phone Number,Amount Owed,Currency,Due Date,Payment Status,Reminder Frequency,Created At\n";
-      const rows = defaultersToExport.map(d => {
-        const escapeCSV = (value: any) => {
-          if (value === null || value === undefined) return '';
-          const stringValue = String(value);
-          // Escape quotes and wrap in quotes if contains comma, newline, or quote
-          if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
-            return `"${stringValue.replace(/"/g, '""')}"`;
-          }
-          return stringValue;
-        };
 
-        return [
-          escapeCSV(d.id),
-          escapeCSV(d.name),
-          escapeCSV(d.phoneNumber),
-          escapeCSV(d.amount),
-          escapeCSV(d.currency),
-          escapeCSV(d.dueDate),
-          escapeCSV(d.paymentStatus),
-          escapeCSV(d.reminderFrequency),
-          escapeCSV(d.createdAt),
-        ].join(',');
-      }).join('\n');
+      // Create CSV content
+      const headers =
+        'ID,Name,Phone Number,Amount Owed,Currency,Due Date,Payment Status,Reminder Frequency,Created At\n';
+      const rows = defaultersToExport
+        .map((d) => {
+          const escapeCSV = (value: any) => {
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            // Escape quotes and wrap in quotes if contains comma, newline, or quote
+            if (
+              stringValue.includes(',') ||
+              stringValue.includes('\n') ||
+              stringValue.includes('"')
+            ) {
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+          };
+
+          return [
+            escapeCSV(d.id),
+            escapeCSV(d.name),
+            escapeCSV(d.phoneNumber),
+            escapeCSV(d.amount),
+            escapeCSV(d.currency),
+            escapeCSV(d.dueDate),
+            escapeCSV(d.paymentStatus),
+            escapeCSV(d.reminderFrequency),
+            escapeCSV(d.createdAt),
+          ].join(',');
+        })
+        .join('\n');
 
       const csvContent = headers + rows;
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -168,12 +178,12 @@ const getMessageHistory = async (id:string) => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('Defaulters exported successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to export defaulters');
     } finally {
-      setApiState(prev => ({...prev, defaultersReport: false}));
+      setApiState((prev) => ({ ...prev, defaultersReport: false }));
     }
   };
 

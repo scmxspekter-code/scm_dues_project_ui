@@ -53,7 +53,6 @@ const initialState: DashboardState = {
     { name: 'Defaulters', value: 0 },
     { name: 'Pending', value: 0 },
   ],
-
 };
 
 export const fetchAIAnalysis = createAsyncThunk(
@@ -74,23 +73,23 @@ const dashboardSlice = createSlice({
   reducers: {
     setStats: (state, action: PayloadAction<DashboardStats>) => {
       const pieData = [
-        { key: "paid", label: "Paid" },
-        { key: "defaulters", label: "Defaulters" },
-        { key: "pending", label: "Pending" },
-      ].map(item => ({
+        { key: 'paid', label: 'Paid' },
+        { key: 'defaulters', label: 'Defaulters' },
+        { key: 'pending', label: 'Pending' },
+      ].map((item) => ({
         name: item.label,
-        value: getPercentage(action.payload.collections[item.key as keyof typeof action.payload.collections], action.payload.collections.total),
-      }))
+        value: getPercentage(
+          action.payload.collections[item.key as keyof typeof action.payload.collections],
+          action.payload.collections.total
+        ),
+      }));
       state.pieData = pieData;
       state.stats = action.payload;
     },
     setChartData: (state, action: PayloadAction<ChartData[]>) => {
       state.chartData = action.payload;
     },
- 
-  
   },
-
 });
 
 export const { setStats, setChartData } = dashboardSlice.actions;

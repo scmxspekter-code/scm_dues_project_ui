@@ -9,13 +9,10 @@ import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
 import { memberSchema } from '@/schemas/member.schema';
 
-
-
-
 export const AddMemberDrawer: React.FC = () => {
   const { createMember, isAddMemberDrawerOpen, closeAddMemberDrawer } = useMembers();
   const isOpen = isAddMemberDrawerOpen;
-  
+
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -28,31 +25,30 @@ export const AddMemberDrawer: React.FC = () => {
     };
   }, [isOpen]);
 
-  
-
   const initialValues = {
-   name: '',
-      phoneNumber: '',
-      amount: 0,
-      currency: "NGN",
-      dueDate: "2024-12-31T00:00:00.000Z",
-      paymentStatus: "pending",
-      reminderFrequency: "monthly"
+    name: '',
+    phoneNumber: '',
+    amount: 0,
+    currency: 'NGN',
+    dueDate: '2024-12-31T00:00:00.000Z',
+    paymentStatus: 'pending',
+    reminderFrequency: 'monthly',
   };
 
   return (
     <>
       {/* Backdrop */}
- {isOpen   && (
-   <div
-     className={classNames("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity",{
-       'opacity-100 ':isOpen
-     })}
-     onClick={closeAddMemberDrawer}
-   />
-
- )}
-         
+      {isOpen && (
+        <div
+          className={classNames(
+            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity',
+            {
+              'opacity-100 ': isOpen,
+            }
+          )}
+          onClick={closeAddMemberDrawer}
+        />
+      )}
 
       {/* Drawer */}
       <div
@@ -86,7 +82,15 @@ export const AddMemberDrawer: React.FC = () => {
               validationSchema={memberSchema}
               onSubmit={createMember}
             >
-              {({ values, handleChange, handleBlur, handleSubmit, errors, touched, isSubmitting }) => (
+              {({
+                values,
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                errors,
+                touched,
+                isSubmitting,
+              }) => (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Name */}
                   <Input
@@ -203,10 +207,10 @@ export const AddMemberDrawer: React.FC = () => {
                     error={touched.paymentStatus ? errors.paymentStatus : undefined}
                     touched={touched.paymentStatus}
                     options={[
-                      { value: "pending", label: "Pending" },
-                      { value: "processing", label: "Processing" },
-                      { value: "paid", label: "Paid" },
-                      { value: "failed", label: "Failed" },
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'processing', label: 'Processing' },
+                      { value: 'paid', label: 'Paid' },
+                      { value: 'failed', label: 'Failed' },
                     ]}
                   />
 
@@ -227,11 +231,10 @@ export const AddMemberDrawer: React.FC = () => {
                     error={touched.reminderFrequency ? errors.reminderFrequency : undefined}
                     touched={touched.reminderFrequency}
                     options={[
-                      { value: "daily", label: "Daily" },
-                      { value: "monthly", label: "Monthly" },
-                      { value: "yearly", label: "Yearly" },
+                      { value: 'daily', label: 'Daily' },
+                      { value: 'monthly', label: 'Monthly' },
+                      { value: 'yearly', label: 'Yearly' },
                     ]}
-                    
                   />
 
                   {/* Submit Button */}

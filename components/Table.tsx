@@ -51,7 +51,8 @@ export const Table = <T extends Record<string, any>>({
 
   const getRowClassName = (row: T, index: number): string => {
     const baseClasses = 'hover:bg-slate-50/50 transition-colors group';
-    const customClasses = typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';
+    const customClasses =
+      typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';
     return classNames(baseClasses, customClasses);
   };
 
@@ -64,7 +65,12 @@ export const Table = <T extends Record<string, any>>({
     >
       <div className="flex-1 overflow-auto min-h-0 scrollbar-hide">
         <table className={classNames('w-full text-left', className)}>
-          <thead className={classNames('bg-slate-50 border-b border-slate-100 sticky top-0 z-10', headerClassName)}>
+          <thead
+            className={classNames(
+              'bg-slate-50 border-b border-slate-100 sticky top-0 z-10',
+              headerClassName
+            )}
+          >
             <tr>
               {columns.map((column, index) => (
                 <th
@@ -99,8 +105,8 @@ export const Table = <T extends Record<string, any>>({
                       {columns.map((column, colIndex) => {
                         const align = column.align || 'left';
                         return (
-                          <td 
-                            key={colIndex} 
+                          <td
+                            key={colIndex}
                             className={classNames(
                               'px-6 py-4',
                               {
@@ -111,11 +117,13 @@ export const Table = <T extends Record<string, any>>({
                               column.className
                             )}
                           >
-                            <div className={classNames('flex items-center', {
-                              'justify-start': align === 'left',
-                              'justify-center': align === 'center',
-                              'justify-end': align === 'right',
-                            })}>
+                            <div
+                              className={classNames('flex items-center', {
+                                'justify-start': align === 'left',
+                                'justify-center': align === 'center',
+                                'justify-end': align === 'right',
+                              })}
+                            >
                               {colIndex === 0 ? (
                                 // First column - usually has avatar/icon
                                 <div className="flex items-center space-x-3 w-full">

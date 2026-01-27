@@ -1,7 +1,10 @@
 import React, { InputHTMLAttributes, ReactNode, useState, ChangeEvent } from 'react';
 import classNames from 'classnames';
 
-export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'onChange'> {
+export interface NumberInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'type' | 'onChange'
+> {
   label?: string | ReactNode;
   error?: string;
   touched?: boolean;
@@ -81,7 +84,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    
+
     // Allow empty input
     if (inputValue === '') {
       if (onChange) {
@@ -91,22 +94,22 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     }
 
     // Create regex pattern based on allowDecimals
-    const numericPattern = allowDecimals 
-      ? /^-?\d*\.?\d*$/  // Allows numbers with optional decimal point
-      : /^-?\d*$/;        // Only allows integers
+    const numericPattern = allowDecimals
+      ? /^-?\d*\.?\d*$/ // Allows numbers with optional decimal point
+      : /^-?\d*$/; // Only allows integers
 
     // Check if input matches numeric pattern
     if (numericPattern.test(inputValue)) {
       // Convert to number to check min/max constraints
       const numValue = parseFloat(inputValue);
-      
+
       // Check if it's a valid number (not NaN)
       if (!isNaN(numValue) || inputValue === '-' || inputValue === '.') {
         // Check min constraint
         if (min !== undefined && numValue < min && inputValue !== '-' && inputValue !== '.') {
           return; // Don't update if below min
         }
-        
+
         // Check max constraint
         if (max !== undefined && numValue > max) {
           return; // Don't update if above max
@@ -134,9 +137,9 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     ) {
       return;
     }
-    
+
     // Ensure that it is a number and stop the keypress
-    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+    if ((e.shiftKey || e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
       // Allow decimal point if decimals are allowed
       if (allowDecimals && (e.keyCode === 190 || e.keyCode === 110)) {
         // Check if decimal point already exists
@@ -146,7 +149,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         }
         return;
       }
-      
+
       // Allow minus sign at the beginning
       if (e.keyCode === 189 || e.keyCode === 109) {
         const currentValue = (e.target as HTMLInputElement).value;
@@ -155,7 +158,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         }
         return;
       }
-      
+
       e.preventDefault();
     }
   };
@@ -165,10 +168,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       {label && (
         <label
           htmlFor={inputId}
-          className={classNames(
-            'block text-sm font-bold text-slate-700',
-            labelClassName
-          )}
+          className={classNames('block text-sm font-bold text-slate-700', labelClassName)}
         >
           {label}
         </label>
@@ -211,13 +211,9 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         )}
       </div>
 
-      {hasError && (
-        <p className="text-xs text-red-500 font-medium mt-1">{error}</p>
-      )}
+      {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}
 
-      {helperText && !hasError && (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="text-xs text-slate-500 mt-1">{helperText}</p>}
     </div>
   );
 };

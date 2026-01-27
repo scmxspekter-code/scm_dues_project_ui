@@ -25,7 +25,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -36,27 +35,25 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       Cookie.remove('auth_token');
     },
-    login: (state, action: PayloadAction<{token:string,user:User}>) => {
+    login: (state, action: PayloadAction<{ token: string; user: User }>) => {
       state.isAuthenticated = true;
       state.user = action.payload.user;
       state.token = action.payload.token;
-
     },
     initializeAuth: (state) => {
-      if(typeof window !== 'undefined'){
+      if (typeof window !== 'undefined') {
         const token = Cookie.get('auth_token');
-        if(token){
+        if (token) {
           state.token = token;
-          state.isAuthenticated = true;  
+          state.isAuthenticated = true;
         }
       }
     },
-setUser: (state, action: PayloadAction<User>) => {
+    setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
     },
-
   },
 });
 
-export const { logout, login, initializeAuth ,setUser} = authSlice.actions;
+export const { logout, login, initializeAuth, setUser } = authSlice.actions;
 export default authSlice.reducer;

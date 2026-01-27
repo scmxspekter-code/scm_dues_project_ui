@@ -17,17 +17,17 @@ export interface PieData {
 }
 
 export const useDashboard = () => {
-  const [aiAnalysis, setAiAnalysis] = useState<string>("Analyzing current trends...");
+  const [aiAnalysis, setAiAnalysis] = useState<string>('Analyzing current trends...');
 
   const dispatch = useAppDispatch();
-  const [apiState,setApiState] = useState({
-    stats:false,
-    paymentsReport:false,
-    remindersReport:false,
-    messagesReport:false,
-    defaultersReport:false,
+  const [apiState, setApiState] = useState({
+    stats: false,
+    paymentsReport: false,
+    remindersReport: false,
+    messagesReport: false,
+    defaultersReport: false,
   });
-  const {me} = useAuth()
+  const { me } = useAuth();
   useEffect(() => {
     const fetchAnalysis = async () => {
       const analysis = await analyzeDefaulterTrends(12, 120);
@@ -43,26 +43,24 @@ export const useDashboard = () => {
     { name: 'Apr', amount: 200000 },
   ];
 
- 
-
   const COLORS = ['#06b6d4', '#ef4444', '#f59e0b'];
-  
+
   const getStats = async () => {
     try {
-      setApiState(prev => ({...prev, stats: true}));
-      const {data} = await $api.dashboard.stats();
+      setApiState((prev) => ({ ...prev, stats: true }));
+      const { data } = await $api.dashboard.stats();
       dispatch(setStats(data!));
     } catch (error: any) {
       toast.error(error.message || 'Failed to fetch stats');
       throw error;
     } finally {
-      setApiState(prev => ({...prev, stats: false}));
+      setApiState((prev) => ({ ...prev, stats: false }));
     }
-  }
-  
-  useEffect(()=>{
+  };
+
+  useEffect(() => {
     getStats();
-  },[]);
+  }, []);
 
   return {
     aiAnalysis,
@@ -70,4 +68,4 @@ export const useDashboard = () => {
     COLORS,
     apiState,
   };
-}
+};

@@ -1,6 +1,13 @@
-
 import React from 'react';
-import { Search, Download, History, MessageSquare, ArrowUpDown, Filter, Loader2 } from 'lucide-react';
+import {
+  Search,
+  Download,
+  History,
+  MessageSquare,
+  ArrowUpDown,
+  Filter,
+  Loader2,
+} from 'lucide-react';
 import { DefaulterActionModal } from '../components/DefaulterActionModal';
 import { useDefaulters } from '../hooks/useDefaulters';
 import { Input } from '../components/Input';
@@ -11,10 +18,10 @@ import { useAppSelector } from '@/store/hooks';
 import { Member } from '../types';
 
 export const Defaulters: React.FC = () => {
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    setSelectedDefaulter, 
+  const {
+    searchTerm,
+    setSearchTerm,
+    setSelectedDefaulter,
     handleExport,
     currentPage,
     itemsPerPage,
@@ -46,7 +53,7 @@ export const Defaulters: React.FC = () => {
           />
         </div>
         <div className="flex items-center space-x-3">
-          <button 
+          <button
             onClick={handleExport}
             disabled={isExporting}
             className="flex items-center space-x-2 px-6 py-3 border border-slate-200 bg-white rounded-2xl hover:bg-slate-50 transition-colors text-slate-700 font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -70,23 +77,23 @@ export const Defaulters: React.FC = () => {
               </button>
             }
             items={[
-              { 
-                label: `Sort by Amount ${sortField === 'amount' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`, 
-                icon: <ArrowUpDown size={16} />, 
+              {
+                label: `Sort by Amount ${sortField === 'amount' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`,
+                icon: <ArrowUpDown size={16} />,
                 onClick: () => handleSort('amount'),
-                className: sortField === 'amount' ? 'bg-cyan-50 text-cyan-600 font-bold' : ''
+                className: sortField === 'amount' ? 'bg-cyan-50 text-cyan-600 font-bold' : '',
               },
-              { 
-                label: `Sort by Date ${sortField === 'createdAt' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`, 
-                icon: <ArrowUpDown size={16} />, 
+              {
+                label: `Sort by Date ${sortField === 'createdAt' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`,
+                icon: <ArrowUpDown size={16} />,
                 onClick: () => handleSort('createdAt'),
-                className: sortField === 'createdAt' ? 'bg-cyan-50 text-cyan-600 font-bold' : ''
+                className: sortField === 'createdAt' ? 'bg-cyan-50 text-cyan-600 font-bold' : '',
               },
-              { 
-                label: `Sort by Name ${sortField === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`, 
-                icon: <ArrowUpDown size={16} />, 
+              {
+                label: `Sort by Name ${sortField === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}`,
+                icon: <ArrowUpDown size={16} />,
                 onClick: () => handleSort('name'),
-                className: sortField === 'name' ? 'bg-cyan-50 text-cyan-600 font-bold' : ''
+                className: sortField === 'name' ? 'bg-cyan-50 text-cyan-600 font-bold' : '',
               },
             ]}
             placement="bottom-right"
@@ -97,19 +104,20 @@ export const Defaulters: React.FC = () => {
       <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between flex-shrink-0">
           <h3 className="font-bold text-slate-800 flex items-center">
-            Defaulter Watchlist 
+            Defaulter Watchlist
             <span className="ml-3 px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-extrabold uppercase tracking-tight">
               {defaulters?.length} Members
             </span>
           </h3>
-          <button 
+          <button
             onClick={() => handleSort('amount')}
             className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center hover:text-slate-600 transition-colors"
           >
-            Sort by Amount {sortField === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')} <ArrowUpDown size={12} className="ml-1" />
+            Sort by Amount {sortField === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}{' '}
+            <ArrowUpDown size={12} className="ml-1" />
           </button>
         </div>
-        
+
         <Table<Member>
           columns={[
             {
@@ -122,7 +130,9 @@ export const Defaulters: React.FC = () => {
                   </div>
                   <div>
                     <div className="font-bold text-slate-800 text-base">{defaulter.name}</div>
-                    <div className="text-sm text-slate-400 font-medium">{defaulter.phoneNumber}</div>
+                    <div className="text-sm text-slate-400 font-medium">
+                      {defaulter.phoneNumber}
+                    </div>
                   </div>
                 </div>
               ),
@@ -133,7 +143,9 @@ export const Defaulters: React.FC = () => {
               align: 'center',
               headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (defaulter) => (
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${(defaulter as any).reminderHistory?.length ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${(defaulter as any).reminderHistory?.length ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}
+                >
                   {(defaulter as any).reminderHistory?.length || 0} Sent
                 </span>
               ),
@@ -144,8 +156,12 @@ export const Defaulters: React.FC = () => {
               headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (defaulter) => (
                 <div className="flex flex-col">
-                  <span className="font-extrabold text-slate-900 text-lg">₦{defaulter.amount.toLocaleString()}</span>
-                  <span className="text-[10px] text-red-500 font-bold uppercase tracking-tight">CRITICAL DEBT</span>
+                  <span className="font-extrabold text-slate-900 text-lg">
+                    ₦{defaulter.amount.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-red-500 font-bold uppercase tracking-tight">
+                    CRITICAL DEBT
+                  </span>
                 </div>
               ),
               className: 'px-8 py-5',
@@ -156,7 +172,7 @@ export const Defaulters: React.FC = () => {
               headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (defaulter) => (
                 <div className="flex items-center justify-end space-x-2">
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedDefaulter(defaulter);
@@ -166,7 +182,7 @@ export const Defaulters: React.FC = () => {
                   >
                     <History size={18} />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedDefaulter(defaulter);
@@ -196,23 +212,21 @@ export const Defaulters: React.FC = () => {
           containerClassName="flex-1 min-h-0 border-0 shadow-none rounded-none"
           headerClassName="bg-slate-50 border-b border-slate-100"
         />
-        
+
         {/* Pagination */}
-  
-          <div className="flex-shrink-0 border-t border-slate-100">
-            <Pagination
-              meta={paginationMeta}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-              className="bg-transparent"
-              disabled={isLoading}
-            />
-          </div>
-       
+
+        <div className="flex-shrink-0 border-t border-slate-100">
+          <Pagination
+            meta={paginationMeta}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            className="bg-transparent"
+            disabled={isLoading}
+          />
+        </div>
       </div>
 
       <DefaulterActionModal />
-
     </div>
   );
 };

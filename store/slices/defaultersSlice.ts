@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {  Member, MessageLog } from '@/types';
+import { Member, MessageLog } from '@/types';
 
 interface DefaultersState {
   defaulters: Member[];
@@ -19,15 +19,13 @@ const initialState: DefaultersState = {
   messageHistory: [],
 };
 
-
-
 const defaultersSlice = createSlice({
   name: 'defaulters',
   initialState,
   reducers: {
     setSearchTerm: (state, action: PayloadAction<string>) => {
       state.searchTerm = action.payload;
-      state.filteredDefaulters = state.defaulters.filter(d =>
+      state.filteredDefaulters = state.defaulters.filter((d) =>
         d.name.toLowerCase().includes(action.payload.toLowerCase())
       );
     },
@@ -46,8 +44,10 @@ const defaultersSlice = createSlice({
       }
     },
     exportDefaulters: (state) => {
-      const headers = "ID,Name,Phone,Amount Due,Joined Date\n";
-      const rows = state.defaulters.map(d => `${d.id},${d.name},${d.phone},${d.amountDue},${d.joinedDate}`).join("\n");
+      const headers = 'ID,Name,Phone,Amount Due,Joined Date\n';
+      const rows = state.defaulters
+        .map((d) => `${d.id},${d.name},${d.phone},${d.amountDue},${d.joinedDate}`)
+        .join('\n');
       const blob = new Blob([headers + rows], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -59,8 +59,14 @@ const defaultersSlice = createSlice({
       state.messageHistory = action.payload;
     },
   },
- 
 });
 
-export const { setSearchTerm, setDefaulters, setSelectedDefaulter, toggleDefaulterDrawer, exportDefaulters, setMessageHistory } = defaultersSlice.actions;
+export const {
+  setSearchTerm,
+  setDefaulters,
+  setSelectedDefaulter,
+  toggleDefaulterDrawer,
+  exportDefaulters,
+  setMessageHistory,
+} = defaultersSlice.actions;
 export default defaultersSlice.reducer;

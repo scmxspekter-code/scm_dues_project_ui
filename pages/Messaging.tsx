@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Send, Wand2, Clock, History, LayoutTemplate, Smartphone, Users } from 'lucide-react';
 import { useMessaging } from '../hooks/useMessaging';
@@ -46,15 +45,17 @@ export const Messaging: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase">Delivery Channel</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">
+                  Delivery Channel
+                </label>
                 <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
-                  <button 
+                  <button
                     onClick={() => setChannel('whatsapp')}
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${channel === 'whatsapp' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
                   >
                     WhatsApp
                   </button>
-                  <button 
+                  <button
                     onClick={() => setChannel('sms')}
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${channel === 'sms' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                   >
@@ -66,8 +67,10 @@ export const Messaging: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-400 uppercase">Message Content</label>
-                <button 
+                <label className="text-xs font-bold text-slate-400 uppercase">
+                  Message Content
+                </label>
+                <button
                   onClick={handleAiGenerate}
                   disabled={isGenerating}
                   className="flex items-center space-x-1 text-cyan-600 text-xs font-bold hover:text-cyan-700 transition-colors disabled:opacity-50"
@@ -76,7 +79,7 @@ export const Messaging: React.FC = () => {
                   <span>{isGenerating ? 'AI Thinking...' : 'Generate with AI'}</span>
                 </button>
               </div>
-              <textarea 
+              <textarea
                 rows={6}
                 placeholder="Type your message here... Use [Member Name] for personalization."
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none font-medium text-slate-700"
@@ -121,8 +124,11 @@ export const Messaging: React.FC = () => {
             Recent History
           </h4>
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0"
+              >
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                   <Smartphone size={16} />
                 </div>
@@ -130,7 +136,9 @@ export const Messaging: React.FC = () => {
                   <p className="text-sm font-bold text-slate-700">Monthly Dues Reminder</p>
                   <p className="text-xs text-slate-400">Sent to 72 members • 2 hrs ago</p>
                   <div className="mt-1 flex space-x-2">
-                    <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">Delivered</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
+                      Delivered
+                    </span>
                   </div>
                 </div>
               </div>
@@ -145,9 +153,13 @@ export const Messaging: React.FC = () => {
   );
 };
 
-const TemplateCard = ({title, type}: {title: string, type: string}) => (
+const TemplateCard = ({ title, type }: { title: string; type: string }) => (
   <div className="p-4 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all cursor-pointer group">
-    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{type}</div>
-    <div className="font-bold text-slate-700 group-hover:text-cyan-600 transition-colors">{title}</div>
+    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+      {type}
+    </div>
+    <div className="font-bold text-slate-700 group-hover:text-cyan-600 transition-colors">
+      {title}
+    </div>
   </div>
 );

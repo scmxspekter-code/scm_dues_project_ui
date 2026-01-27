@@ -1,28 +1,43 @@
-
 import React from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
 } from 'recharts';
-import { TrendingUp, Users, AlertCircle, CheckCircle, BrainCircuit, CreditCard } from 'lucide-react';
+import {
+  TrendingUp,
+  Users,
+  AlertCircle,
+  CheckCircle,
+  BrainCircuit,
+  CreditCard,
+} from 'lucide-react';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAppSelector } from '@/store/hooks';
-import { StatCardSkeleton, ChartSkeleton, PieChartSkeleton, AIBannerSkeleton } from '../components/Skeleton';
+import {
+  StatCardSkeleton,
+  ChartSkeleton,
+  PieChartSkeleton,
+  AIBannerSkeleton,
+} from '../components/Skeleton';
 
-const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; trend?: string }> = ({ title, value, icon, color, trend }) => (
+const StatCard: React.FC<{
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color: string;
+  trend?: string;
+}> = ({ title, value, icon, color, trend }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
     <div className="flex items-center justify-between mb-4">
-      <div className={`p-3 rounded-xl ${color}`}>
-        {icon}
-      </div>
+      <div className={`p-3 rounded-xl ${color}`}>{icon}</div>
       {trend && (
         <span className="text-emerald-500 text-xs font-bold bg-emerald-50 px-2 py-1 rounded-full flex items-center">
           <TrendingUp size={12} className="mr-1" />
@@ -36,8 +51,8 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
 );
 
 export const Dashboard: React.FC = () => {
-  const { aiAnalysis, chartData, COLORS , apiState} = useDashboard();
-  const {stats,pieData} = useAppSelector((state) => state.dashboard);
+  const { aiAnalysis, chartData, COLORS, apiState } = useDashboard();
+  const { stats, pieData } = useAppSelector((state) => state.dashboard);
   const isLoading = apiState.stats;
 
   return (
@@ -53,11 +68,11 @@ export const Dashboard: React.FC = () => {
           <div>
             <h4 className="font-bold text-lg mb-1 flex items-center">
               AI Collection Insight
-              <span className="ml-2 text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter font-normal">Gemini 3 Powered</span>
+              <span className="ml-2 text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter font-normal">
+                Gemini 3 Powered
+              </span>
             </h4>
-            <p className="text-cyan-50 text-sm leading-relaxed max-w-3xl">
-              {aiAnalysis}
-            </p>
+            <p className="text-cyan-50 text-sm leading-relaxed max-w-3xl">{aiAnalysis}</p>
           </div>
         </div>
       )}
@@ -73,29 +88,29 @@ export const Dashboard: React.FC = () => {
           </>
         ) : (
           <>
-            <StatCard 
-              title="Total Revenue" 
-              value={`₦${stats.collections.totalAmountCollected.toLocaleString()}`} 
-              icon={<CreditCard className="text-cyan-600" />} 
+            <StatCard
+              title="Total Revenue"
+              value={`₦${stats.collections.totalAmountCollected.toLocaleString()}`}
+              icon={<CreditCard className="text-cyan-600" />}
               color="bg-cyan-50"
               trend="+12%"
             />
-            <StatCard 
-              title="Total Members" 
-              value={stats.collections.total.toString()} 
-              icon={<Users className="text-blue-600" />} 
+            <StatCard
+              title="Total Members"
+              value={stats.collections.total.toString()}
+              icon={<Users className="text-blue-600" />}
               color="bg-blue-50"
             />
-            <StatCard 
-              title={`Paid (${new Date().getFullYear()})`} 
-              value={stats.collections.paid.toString()} 
-              icon={<CheckCircle className="text-emerald-600" />} 
+            <StatCard
+              title={`Paid (${new Date().getFullYear()})`}
+              value={stats.collections.paid.toString()}
+              icon={<CheckCircle className="text-emerald-600" />}
               color="bg-emerald-50"
             />
-            <StatCard 
-              title="Defaulters" 
-              value={stats.collections.defaulters.toString()} 
-              icon={<AlertCircle className="text-red-600" />} 
+            <StatCard
+              title="Defaulters"
+              value={stats.collections.defaulters.toString()}
+              icon={<AlertCircle className="text-red-600" />}
               color="bg-red-50"
             />
           </>
@@ -121,11 +136,25 @@ export const Dashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                    }}
                   />
                   <Bar dataKey="amount" fill="#06b6d4" radius={[6, 6, 0, 0]} barSize={40} />
                 </BarChart>
@@ -166,7 +195,10 @@ export const Dashboard: React.FC = () => {
               {pieData.map((item, i) => (
                 <div key={item.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[i]}}></div>
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: COLORS[i] }}
+                    ></div>
                     <span className="text-slate-500">{item.name}</span>
                   </div>
                   <span className="font-semibold text-slate-700">{item.value}%</span>

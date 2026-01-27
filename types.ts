@@ -1,8 +1,8 @@
-export type MessageStatus = "pending" | "sent" | "delivered" | "failed";
+export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'failed';
 
-export type MessageChannel = "whatsapp" | "sms" | "email";
+export type MessageChannel = 'whatsapp' | 'sms' | 'email';
 
-export type MessageType = "dues_reminder";
+export type MessageType = 'dues_reminder';
 
 export interface ReminderHistory {
   id: string;
@@ -64,7 +64,7 @@ export interface PaginationMeta {
   nextPage: number | null;
 }
 
-export interface IApiBaseResponse<T>{
+export interface IApiBaseResponse<T> {
   data?: T;
   meta?: PaginationMeta;
   error?: string;
@@ -73,11 +73,11 @@ export interface IApiBaseResponse<T>{
   accessTokenExpires?: number;
 }
 
-export interface IApiParams{
+export interface IApiParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'pending' | 'processing'|'paid'|'failed';
+  status?: 'pending' | 'processing' | 'paid' | 'failed';
 }
 
 export interface User {
@@ -87,35 +87,33 @@ export interface User {
   email: string;
 }
 
-
 export enum Currency {
-  NGN = "NGN"
+  NGN = 'NGN',
 }
 
 export enum PaymentStatus {
-  PENDING = "pending",
-  PAID = "paid",
-  FAILED = "failed"
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
 }
 
 export enum ReminderFrequency {
-  DAILY = "daily",
-  WEEKLY = "weekly",
-  MONTHLY = "monthly",
-  YEARLY = "yearly"
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
 }
 
 export enum PaymentProvider {
-  PAYSTACK = "paystack",
-  FLUTTERWAVE = "flutterwave"
+  PAYSTACK = 'paystack',
+  FLUTTERWAVE = 'flutterwave',
 }
 
 export enum PaymentLinkStatus {
-  ACTIVE = "active",
-  EXPIRED = "expired",
-  DISABLED = "disabled"
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  DISABLED = 'disabled',
 }
-
 
 export interface PaymentLink {
   id: string;
@@ -154,7 +152,7 @@ export interface Member {
 export interface DashboardStats {
   collections: CollectionsStats;
   recentPayments: [];
-  recentReminders:[];
+  recentReminders: [];
   messageDeliveryRates: MessageDeliveryStats;
 }
 
@@ -176,8 +174,7 @@ export interface MessageDeliveryStats {
   total: number;
 }
 
-
-export  interface ICreateMemberPayload{
+export interface ICreateMemberPayload {
   name: string;
   phoneNumber: string;
   amount: number;
@@ -186,10 +183,3 @@ export  interface ICreateMemberPayload{
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
 }
-
-
-
-
-
-
-

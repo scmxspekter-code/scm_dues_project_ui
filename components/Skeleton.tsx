@@ -16,7 +16,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   animation = 'pulse',
 }) => {
   const baseClasses = 'bg-slate-200 rounded';
-  
+
   const variantClasses = {
     text: 'h-4 rounded',
     circular: 'rounded-full',
@@ -63,12 +63,7 @@ export const ChartSkeleton: React.FC = () => {
       </div>
       <div className="h-72 w-full flex items-end justify-between gap-2 px-4">
         {barHeights.map((height, i) => (
-          <Skeleton
-            key={i}
-            width="100%"
-            height={`${height}%`}
-            className="rounded-t"
-          />
+          <Skeleton key={i} width="100%" height={`${height}%`} className="rounded-t" />
         ))}
       </div>
     </div>

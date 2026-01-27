@@ -71,9 +71,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   const selectedOption = options.find((opt) => opt.value === value);
 
   const filteredOptions = searchable
-    ? options.filter((opt) =>
-        opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? options.filter((opt) => opt.label.toLowerCase().includes(searchTerm.toLowerCase()))
     : options;
 
   useEffect(() => {
@@ -111,12 +109,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   return (
     <div className={classNames('space-y-2', containerClassName)} ref={selectRef}>
       {label && (
-        <label
-          className={classNames(
-            'block text-sm font-bold text-slate-700',
-            labelClassName
-          )}
-        >
+        <label className={classNames('block text-sm font-bold text-slate-700', labelClassName)}>
           {label}
         </label>
       )}
@@ -145,13 +138,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
             className
           )}
         >
-          <span className={classNames('flex items-center space-x-2 flex-1', {
-            'text-slate-400': !selectedOption,
-          })}>
+          <span
+            className={classNames('flex items-center space-x-2 flex-1', {
+              'text-slate-400': !selectedOption,
+            })}
+          >
             {selectedOption?.icon && <span className="flex-shrink-0">{selectedOption.icon}</span>}
-            <span className="truncate">
-              {selectedOption ? selectedOption.label : placeholder}
-            </span>
+            <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
           </span>
           <ChevronDown
             size={18}
@@ -162,9 +155,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         </button>
 
         {/* Hidden input for form compatibility */}
-        {name && (
-          <input type="hidden" name={name} value={value || ''} />
-        )}
+        {name && <input type="hidden" name={name} value={value || ''} />}
 
         {/* Dropdown Menu */}
         {isOpen && (
@@ -185,9 +176,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
             <div className="max-h-60 overflow-y-auto">
               {filteredOptions.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-slate-400 text-center">
-                  No options found
-                </div>
+                <div className="px-4 py-3 text-sm text-slate-400 text-center">No options found</div>
               ) : (
                 filteredOptions.map((option) => (
                   <button
@@ -220,13 +209,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         )}
       </div>
 
-      {hasError && (
-        <p className="text-xs text-red-500 font-medium mt-1">{error}</p>
-      )}
+      {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}
 
-      {helperText && !hasError && (
-        <p className="text-xs text-slate-500 mt-1">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="text-xs text-slate-500 mt-1">{helperText}</p>}
     </div>
   );
 };
