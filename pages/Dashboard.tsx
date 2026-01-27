@@ -140,7 +140,7 @@ export const Dashboard: React.FC = () => {
         ) : (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
             <h4 className="font-bold text-slate-800 mb-4">Status Breakdown</h4>
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie

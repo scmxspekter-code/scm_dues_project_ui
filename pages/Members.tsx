@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Search, Filter, Plus, Mail, Phone, ArrowUpDown, Loader2 } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { AddMemberDrawer } from '../components/AddMemberDrawer';
@@ -20,10 +20,9 @@ export const Members: React.FC = () => {
     paginationMeta,
     handlePageChange,
     handleItemsPerPageChange,
-    isLoading,
+    apiState,
+    setSelectedMember,
   } = useMembers();
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   return (
     <>
        <AddMemberDrawer />
@@ -123,7 +122,6 @@ export const Members: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedMember(member);
-                    setIsDetailDrawerOpen(true);
                   }}
                   className="text-cyan-600 font-bold text-sm hover:underline"
                 >
@@ -133,7 +131,7 @@ export const Members: React.FC = () => {
             },
           ]}
           data={members}
-          isLoading={isLoading}
+          isLoading={apiState.getMembers}
           emptyState={
             <div className="py-20 text-center flex flex-col items-center">
               <div className="bg-slate-50 p-4 rounded-full mb-4">
@@ -155,7 +153,7 @@ export const Members: React.FC = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
               className="bg-transparent"
-              disabled={isLoading}
+              disabled={apiState.getMembers}
             />
           </div>
     
@@ -163,22 +161,7 @@ export const Members: React.FC = () => {
     </div>
 
     {/* Member Detail Drawer */}
-    <MemberDetailDrawer
-      member={selectedMember}
-      isOpen={isDetailDrawerOpen}
-      onClose={() => {
-        setIsDetailDrawerOpen(false);
-        setSelectedMember(null);
-      }}
-      onEdit={(member) => {
-        // TODO: Implement edit functionality
-        console.log('Edit member:', member);
-      }}
-      onSendReminder={(member) => {
-        // TODO: Implement send reminder functionality
-        console.log('Send reminder to:', member);
-      }}
-    />
+    <MemberDetailDrawer />
     </>
   );
 };

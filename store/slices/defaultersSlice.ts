@@ -1,18 +1,22 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {  Member } from '@/types';
+import {  Member, MessageLog } from '@/types';
 
 interface DefaultersState {
   defaulters: Member[];
   filteredDefaulters: Member[];
   searchTerm: string;
-  selectedDefaulter: Member | null;
+  member: Member | null;
+  isDrawerOpen: boolean;
+  messageHistory: MessageLog[];
 }
 
 const initialState: DefaultersState = {
   defaulters: [],
   filteredDefaulters: [],
   searchTerm: '',
-  selectedDefaulter: null,
+  member: null,
+  isDrawerOpen: false,
+  messageHistory: [],
 };
 
 
@@ -32,7 +36,14 @@ const defaultersSlice = createSlice({
       state.filteredDefaulters = action.payload;
     },
     setSelectedDefaulter: (state, action: PayloadAction<Member | null>) => {
-      state.selectedDefaulter = action.payload;
+      state.member = action.payload;
+      state.isDrawerOpen = !!action.payload;
+    },
+    toggleDefaulterDrawer: (state) => {
+      state.isDrawerOpen = !state.isDrawerOpen;
+      if (!state.isDrawerOpen) {
+        state.member = null;
+      }
     },
     exportDefaulters: (state) => {
       const headers = "ID,Name,Phone,Amount Due,Joined Date\n";
@@ -44,10 +55,12 @@ const defaultersSlice = createSlice({
       a.download = `scm_defaulters_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
     },
-   
+    setMessageHistory: (state, action: PayloadAction<MessageLog[]>) => {
+      state.messageHistory = action.payload;
+    },
   },
  
 });
 
-export const { setSearchTerm, setDefaulters, setSelectedDefaulter, exportDefaulters } = defaultersSlice.actions;
+export const { setSearchTerm, setDefaulters, setSelectedDefaulter, toggleDefaulterDrawer, exportDefaulters, setMessageHistory } = defaultersSlice.actions;
 export default defaultersSlice.reducer;

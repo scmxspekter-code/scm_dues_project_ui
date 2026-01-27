@@ -43,12 +43,16 @@ export const AddMemberDrawer: React.FC = () => {
   return (
     <>
       {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 top-0 bg-black/50 z-40 transition-opacity"
-          onClick={closeAddMemberDrawer}
-        />
-      )}
+ {isOpen   && (
+   <div
+     className={classNames("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity",{
+       'opacity-100 ':isOpen
+     })}
+     onClick={closeAddMemberDrawer}
+   />
+
+ )}
+         
 
       {/* Drawer */}
       <div

@@ -3,7 +3,7 @@ import { IApiParams, Member, PaymentStatus, PaginationMeta } from '../types';
 import { $api } from '@/api';
 import { ICreateMemberPayload } from '@/api/member.repository';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addMember, setMembers, toggleAddMemberDrawer, closeAddMemberDrawer, setLoading, setError } from '@/store/slices/membersSlice';
+import { addMember, setMembers, toggleAddMember, setSelectedMember as setSelectedMemberAction, toggleMemberDrawer } from '@/store/slices/membersSlice';
 import { toast } from 'react-hot-toast';
 import { debounce } from '@/utils/debounce';
 
@@ -16,14 +16,24 @@ export const useMembers = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
   const dispatch = useAppDispatch();
-  const { members, isAddMemberDrawerOpen, isLoading } = useAppSelector((state) => state.members);
-
+  const { members, isAddMemberDrawerOpen } = useAppSelector((state) => state.members);
+const [apiState, setApiState] = useState({
+  getMembers:false,
+  createMember:false,
+  updateMember:false,
+  deleteMember:false,
+  getMember:false,
+  getMemberHistory:false,
+  getMemberPayments:false,
+  getMemberReminders:false,
+  getMemberSettings:false,
+})
   const toggleAddMemberDrawerHandler = () => {
-    dispatch(toggleAddMemberDrawer());
+    dispatch(toggleAddMember());
   };
 
   const closeAddMemberDrawerHandler = () => {
-    dispatch(closeAddMemberDrawer());
+    dispatch(toggleAddMember());
   };
 
   const handlePageChange = (page: number) => {
@@ -56,8 +66,7 @@ export const useMembers = () => {
   }, [currentPage, itemsPerPage, debouncedSearchTerm]);
   const getMembers = useCallback(async (params: IApiParams) => {
     try {
-      dispatch(setLoading(true));
-      dispatch(setError(null));
+      setApiState(prev => ({...prev, getMembers: true}));
       const response = await $api.members.getMembers(params);
       dispatch(setMembers(response.data!));
       // Set pagination meta if available
@@ -74,14 +83,14 @@ export const useMembers = () => {
       toast.error(error.message || 'Failed to fetch members');
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      setApiState(prev => ({...prev, getMembers: false}));
     }
   }, [dispatch]);
 
   const createMember = async (payload: ICreateMemberPayload) => {
     try {
       const {data} = await $api.members.createMember([payload]);
-      dispatch(closeAddMemberDrawer());
+      dispatch(toggleAddMember());
       dispatch(addMember(data!));
     } catch (error: any) {
       throw error;
@@ -90,19 +99,29 @@ export const useMembers = () => {
 
   // Fetch members when page, items per page, or debounced search term changes
 
-return {
-  createMember,
-  toggleAddMemberDrawer: toggleAddMemberDrawerHandler,
-  closeAddMemberDrawer: closeAddMemberDrawerHandler,
-  isAddMemberDrawerOpen,
-  members,
-  searchTerm,
-  setSearchTerm,
-  currentPage,
-  itemsPerPage,
-  paginationMeta,
-  handlePageChange,
-  handleItemsPerPageChange,
-  isLoading,
-}
+  const setSelectedMember = (member: Member | null) => {
+    dispatch(setSelectedMemberAction(member));
+  };
+
+  const toggleMemberDrawerHandler = () => {
+    dispatch(toggleMemberDrawer());
+  };
+
+  return {
+    createMember,
+    toggleAddMemberDrawer: toggleAddMemberDrawerHandler,
+    closeAddMemberDrawer: closeAddMemberDrawerHandler,
+    isAddMemberDrawerOpen,
+    members,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    itemsPerPage,
+    paginationMeta,
+    handlePageChange,
+    handleItemsPerPageChange,
+    apiState,
+    setSelectedMember,
+    toggleMemberDrawer: toggleMemberDrawerHandler,
+  }
 };

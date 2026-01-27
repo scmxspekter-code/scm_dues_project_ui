@@ -1,26 +1,23 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {  Member } from '@/types';
-import { IMemberCreateResponse } from '@/api/member.repository';
 
 
 interface MembersState {
   members: Member[];
   filteredMembers: Member[];
   searchTerm: string;
-  isLoading: boolean;
-  error: string | null;
-  selectedMember: Member | null;
+  member: Member | null;
   isAddMemberDrawerOpen: boolean;
+  isDrawerOpen: boolean;
 }
 
 const initialState: MembersState = {
   members: [] ,
   filteredMembers: [],
   searchTerm: '',
-  isLoading: false,
-  error: null,
-  selectedMember: null,
+  member: null,
   isAddMemberDrawerOpen: false,
+  isDrawerOpen: false,
 };
 
 
@@ -38,7 +35,14 @@ const membersSlice = createSlice({
       );
     },
     setSelectedMember: (state, action: PayloadAction<Member | null>) => {
-      state.selectedMember = action.payload;
+      state.member = action.payload;
+      state.isDrawerOpen = !!action.payload;
+    },
+    toggleMemberDrawer: (state) => {
+      state.isDrawerOpen = !state.isDrawerOpen;
+      if (!state.isDrawerOpen) {
+        state.member = null;
+      }
     },
     addMember: (state, action: PayloadAction<Member[]>) => {
       state.members.push(...action.payload);
@@ -63,24 +67,11 @@ const membersSlice = createSlice({
         state.filteredMembers = state.members;
       }
     },
-    clearError: (state) => {
-      state.error = null;
-    },
-    openAddMemberDrawer: (state) => {
-      state.isAddMemberDrawerOpen = true;
-    },
-    closeAddMemberDrawer: (state) => {
-      state.isAddMemberDrawerOpen = false;
-    },
-    toggleAddMemberDrawer: (state) => {
+
+    toggleAddMember: (state) => {
       state.isAddMemberDrawerOpen = !state.isAddMemberDrawerOpen;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
+
   },
 
 });
@@ -91,11 +82,7 @@ export const {
   addMember, 
   setMembers,
   updateMember, 
-  clearError,
-  openAddMemberDrawer,
-  closeAddMemberDrawer,
-  toggleAddMemberDrawer,
-  setLoading,
-  setError,
+  toggleAddMember,
+  toggleMemberDrawer,
 } = membersSlice.actions;
 export default membersSlice.reducer;

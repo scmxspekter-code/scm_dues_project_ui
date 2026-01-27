@@ -14,7 +14,6 @@ export const Defaulters: React.FC = () => {
   const { 
     searchTerm, 
     setSearchTerm, 
-    selectedDefaulter, 
     setSelectedDefaulter, 
     handleExport,
     currentPage,
@@ -212,12 +211,8 @@ export const Defaulters: React.FC = () => {
        
       </div>
 
-      {selectedDefaulter && (
-        <DefaulterActionModal 
-          member={selectedDefaulter} 
-          onClose={() => setSelectedDefaulter(null)} 
-        />
-      )}
+      <DefaulterActionModal />
+
     </div>
   );
 };

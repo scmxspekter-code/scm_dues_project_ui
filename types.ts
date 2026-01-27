@@ -1,4 +1,8 @@
+export type MessageStatus = "pending" | "sent" | "delivered" | "failed";
 
+export type MessageChannel = "whatsapp" | "sms" | "email";
+
+export type MessageType = "dues_reminder";
 
 export interface ReminderHistory {
   id: string;
@@ -33,10 +37,19 @@ export interface PaymentRecord {
 export interface MessageLog {
   id: string;
   recipient: string;
+  type: MessageChannel;
+  collectionId: string;
+  messageType: MessageType;
+  channel: MessageChannel;
+  recipientPhone: string;
+  recipientName: string;
   content: string;
-  type: 'SMS' | 'WhatsApp';
-  status: 'Sent' | 'Delivered' | 'Failed';
-  timestamp: string;
+  status: MessageStatus;
+  externalId: string | null;
+  errorMessage: string | null;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  collection: Member;
 }
 
 export interface PaginationMeta {
@@ -173,3 +186,10 @@ export  interface ICreateMemberPayload{
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
 }
+
+
+
+
+
+
+

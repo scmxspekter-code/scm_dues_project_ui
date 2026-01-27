@@ -94,7 +94,7 @@ export const Table = <T extends Record<string, any>>({
                     </td>
                   </tr>
                 ) : (
-                  [...Array(6)].map((_, index) => (
+                  [...Array(10)].map((_, index) => (
                     <tr key={`skeleton-${index}`} className="animate-pulse">
                       {columns.map((column, colIndex) => {
                         const align = column.align || 'left';

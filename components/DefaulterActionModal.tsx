@@ -1,47 +1,69 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, History, Send, Wand2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Member, ReminderHistory } from '../types';
+import { ReminderHistory } from '../types';
 import { generateDuesReminder } from '../services/geminiService';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { toggleDefaulterDrawer } from '@/store/slices/defaultersSlice';
 
-interface DefaulterActionModalProps {
-  member: Member;
-  onClose: () => void;
-}
+export const DefaulterActionModal: React.FC = () => {
+  const { member, isDrawerOpen } = useAppSelector((state) => state.defaulters);
+  const dispatch = useAppDispatch();
 
-export const DefaulterActionModal: React.FC<DefaulterActionModalProps> = ({ member, onClose }) => {
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (isDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isDrawerOpen]);
   const [activeTab, setActiveTab] = React.useState<'history' | 'message'>('history');
   const [customMsg, setCustomMsg] = React.useState('');
   const [isGenerating, setIsGenerating] = React.useState(false);
 
   const handleAiGenerate = async () => {
+    if (!member) return;
     setIsGenerating(true);
-    const content = await generateDuesReminder(member.name, member.amountDue, "Next Friday");
+    const content = await generateDuesReminder(member.name, member.amount, "Next Friday");
     setCustomMsg(content);
     setIsGenerating(false);
   };
 
   const handleSendMessage = () => {
-    alert(`Message sent to ${member.name}`);
-    onClose();
+    if (!member) return;
+    alert(`Message sent to ${member?.name}`);
+    dispatch(toggleDefaulterDrawer());
   };
+
+  const handleClose = () => {
+    dispatch(toggleDefaulterDrawer());
+  };
+
+  if (!isDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={handleClose}></div>
+      
+      {/* Modal */}
       <div className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-bold text-xl">
-              {member.name.charAt(0)}
+              {member?.name?.charAt(0)}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">{member.name}</h3>
-              <p className="text-sm text-slate-500 font-medium">Owes ₦{member.amount.toLocaleString()}</p>
+              <h3 className="text-lg font-bold text-slate-900">{member?.name}</h3>
+              <p className="text-sm text-slate-500 font-medium">Owes ₦{member?.amount.toLocaleString()}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
+          <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
             <X size={20} />
           </button>
         </div>
@@ -66,8 +88,8 @@ export const DefaulterActionModal: React.FC<DefaulterActionModalProps> = ({ memb
         <div className="flex-1 overflow-y-auto p-6 bg-white">
           {activeTab === 'history' ? (
             <div className="space-y-6">
-              {member.reminderHistory?.length ? (
-                member.reminderHistory.map((h, i) => (
+              {member?.reminderHistory?.length ? (
+                member?.reminderHistory.map((h, i) => (
                   <div key={h.id} className="relative pl-8 before:absolute before:left-[11px] before:top-2 before:bottom-0 before:w-0.5 before:bg-slate-100 last:before:hidden">
                     <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center z-10 ${h.status === 'Delivered' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                       {h.status === 'Delivered' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
@@ -110,7 +132,7 @@ export const DefaulterActionModal: React.FC<DefaulterActionModalProps> = ({ memb
               <div className="flex items-center space-x-2 p-3 bg-amber-50 rounded-2xl border border-amber-100">
                 <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
                 <p className="text-[10px] text-amber-700 font-bold uppercase leading-tight">
-                  Message will be sent to {member.phone} via WhatsApp as primary channel.
+                  Message will be sent to {member?.phoneNumber} via WhatsApp as primary channel.
                 </p>
               </div>
             </div>
@@ -119,7 +141,7 @@ export const DefaulterActionModal: React.FC<DefaulterActionModalProps> = ({ memb
 
         {/* Footer */}
         <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end space-x-3">
-          <button onClick={onClose} className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-200 rounded-2xl transition-all">
+          <button onClick={handleClose} className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-200 rounded-2xl transition-all">
             Cancel
           </button>
           {activeTab === 'message' && (

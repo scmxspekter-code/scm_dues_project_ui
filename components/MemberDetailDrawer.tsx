@@ -1,26 +1,19 @@
 import React, { useEffect } from 'react';
 import { X, User, Mail, Phone, Calendar, DollarSign, CreditCard, Bell, Edit, MessageSquare, History, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import classNames from 'classnames';
-import { Member, PaymentStatus } from '../types';
+import { PaymentStatus } from '../types';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { toggleMemberDrawer } from '@/store/slices/membersSlice';
+import { is } from 'date-fns/locale';
 
-interface MemberDetailDrawerProps {
-  member: Member | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onEdit?: (member: Member) => void;
-  onSendReminder?: (member: Member) => void;
-}
 
-export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({ 
-  member, 
-  isOpen, 
-  onClose,
-  onEdit,
-  onSendReminder 
-}) => {
+export const MemberDetailDrawer: React.FC = () => {
+  const { member, isDrawerOpen } = useAppSelector((state) => state.members);
+  const dispatch = useAppDispatch();
+
   // Prevent body scroll when drawer is open
   useEffect(() => {
-    if (isOpen) {
+    if (isDrawerOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -28,9 +21,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
-
-  if (!member) return null;
+  }, [isDrawerOpen]);
 
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
@@ -59,6 +50,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
       year: 'numeric', 
@@ -67,23 +59,30 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
     });
   };
 
+  const handleClose = () => {
+    dispatch(toggleMemberDrawer());
+  };
+
+ 
+
   return (
     <>
       {/* Backdrop */}
-      {isOpen && (
+      {isDrawerOpen&&(
         <div
-          className="fixed inset-0 top-0 bg-black/50 z-40 transition-opacity"
-          onClick={onClose}
+          className={classNames ("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out ",  {'opacity-100':isDrawerOpen })}
+          onClick={handleClose}
         />
+
       )}
+  
 
       {/* Drawer */}
       <div
         className={classNames(
-          'fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto',
+          'fixed top-0 right-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto translate-x-full',
           {
-            'translate-x-0': isOpen,
-            'translate-x-full': !isOpen,
+            'translate-x-0': isDrawerOpen,
           }
         )}
       >
@@ -92,15 +91,15 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
           <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-2xl shadow-lg">
-                {member.name.charAt(0)}
+                {member?.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-800">{member.name}</h2>
+                <h2 className="text-2xl font-bold text-slate-800">{member?.name}</h2>
                 <p className="text-sm text-slate-500 mt-1">Member Profile</p>
               </div>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700"
             >
               <X size={20} />
@@ -113,24 +112,24 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
             <div className="flex items-center justify-between">
               <div className={classNames(
                 'flex items-center space-x-2 px-4 py-2 rounded-xl border font-bold',
-                getStatusColor(member.status)
+                getStatusColor(member?.status || PaymentStatus.PENDING)
               )}>
-                {getStatusIcon(member.status)}
-                <span>{member.status}</span>
+                {getStatusIcon(member?.status || PaymentStatus.PENDING)}
+                <span>{member?.status}</span>
               </div>
               <div className="flex items-center space-x-2">
-                {onEdit && (
+                {member && (
                   <button
-                    onClick={() => onEdit(member)}
+                    onClick={() => console.log('edit member')}
                     className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-700 font-medium"
                   >
                     <Edit size={16} />
                     <span>Edit</span>
                   </button>
                 )}
-                {onSendReminder && (
+                {member && (
                   <button
-                    onClick={() => onSendReminder(member)}
+                    onClick={() => console.log('send reminder')}
                     className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-xl transition-colors text-white font-medium shadow-lg shadow-cyan-100"
                   >
                     <MessageSquare size={16} />
@@ -151,7 +150,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</p>
-                    <p className="text-slate-800 font-semibold mt-1">{member.name}</p>
+                    <p className="text-slate-800 font-semibold mt-1">{member?.name}</p>
                   </div>
                 </div>
 
@@ -161,7 +160,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</p>
-                    <p className="text-slate-800 font-semibold mt-1">{member.email || 'N/A'}</p>
+                    <p className="text-slate-800 font-semibold mt-1">{member?.email || 'N/A'}</p>
                   </div>
                 </div>
 
@@ -171,7 +170,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone</p>
-                    <p className="text-slate-800 font-semibold mt-1">{member.phoneNumber}</p>
+                    <p className="text-slate-800 font-semibold mt-1">{member?.phoneNumber}</p>
                   </div>
                 </div>
 
@@ -181,7 +180,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joined Date</p>
-                    <p className="text-slate-800 font-semibold mt-1">{formatDate(member.joinedDate)}</p>
+                    <p className="text-slate-800 font-semibold mt-1">{formatDate(member?.joinedDate || '')}</p>
                   </div>
                 </div>
               </div>
@@ -198,18 +197,18 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Amount Due</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">₦{member.amount.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">₦{member?.amount.toLocaleString()}</p>
                   </div>
                 </div>
 
-                {member.lastPaymentDate && (
+                {member?.lastPaymentDate && (
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg">
                       <CreditCard className="text-cyan-600" size={20} />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Last Payment</p>
-                      <p className="text-slate-800 font-semibold mt-1">{formatDate(member.lastPaymentDate)}</p>
+                      <p className="text-slate-800 font-semibold mt-1">{formatDate(member?.lastPaymentDate || '')}</p>
                     </div>
                   </div>
                 )}
@@ -217,7 +216,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
             </div>
 
             {/* Reminder History */}
-            {member.reminderHistory && member.reminderHistory.length > 0 && (
+            {member?.reminderHistory && member?.reminderHistory.length > 0 && (
               <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
@@ -225,39 +224,39 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                     <span>Reminder History</span>
                   </h3>
                   <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full">
-                    {member.reminderHistory.length} Sent
+                    {member?.reminderHistory?.length || 0} Sent
                   </span>
                 </div>
                 
                 <div className="space-y-3">
-                  {member.reminderHistory.map((reminder) => (
+                  {member?.reminderHistory?.map((reminder) => (
                     <div
                       key={reminder.id}
                       className="bg-white rounded-xl p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-slate-800 font-medium">{reminder.content}</p>
+                          <p className="text-slate-800 font-medium">{reminder.content || ''}</p>
                           <div className="flex items-center space-x-4 mt-2">
                             <span className="text-xs text-slate-500 flex items-center space-x-1">
                               <Calendar size={12} />
-                              <span>{formatDate(reminder.date)}</span>
+                              <span>{formatDate(reminder.date || '')}</span>
                             </span>
                             <span className="text-xs text-slate-500 flex items-center space-x-1">
                               <MessageSquare size={12} />
-                              <span>{reminder.type}</span>
+                              <span>{reminder.type || ''}</span>
                             </span>
                           </div>
                         </div>
                         <span
                           className={classNames(
                             'px-2 py-1 rounded-full text-xs font-bold',
-                            reminder.status === 'Delivered'
+                            reminder.status === 'Delivered' 
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-red-50 text-red-600'
                           )}
                         >
-                          {reminder.status}
+                          {reminder.status || ''}
                         </span>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Member, PaginationMeta, PaymentStatus } from '../types';
-import { setDefaulters } from '@/store/slices/defaultersSlice';
+import { setDefaulters, toggleDefaulterDrawer, setSelectedDefaulter as setSelectedDefaulterAction } from '@/store/slices/defaultersSlice';
 import { $api } from '@/api';
 import { IReportParams } from '@/api/defaulter.repository';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -23,7 +23,6 @@ export const useDefaulters = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
-  const [selectedDefaulter, setSelectedDefaulter] = useState<Member | null>(null);
   const [sortField, setSortField] = useState<SortField>('amount');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [debouncedSortField, setDebouncedSortField] = useState<SortField>('amount');
@@ -73,7 +72,15 @@ export const useDefaulters = () => {
       setApiState(prev => ({...prev, defaulters: false}));
     }
   };
-
+const getMessageHistory = async (id:string) => {
+  try {
+    const response = await $api.messaging.getMessageHistory(id);
+    return response.data;
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to fetch message history');
+    throw error;
+  }
+};
   // Fetch defaulters when page, items per page, search term, or sort changes
   useEffect(() => {
     getDefaulters({
@@ -103,6 +110,14 @@ export const useDefaulters = () => {
       setSortField(field);
       setSortOrder('desc');
     }
+  };
+
+  const setSelectedDefaulter = (defaulter: Member | null) => {
+    dispatch(setSelectedDefaulterAction(defaulter));
+  };
+
+  const toggleDefaulterDrawerHandler = () => {
+    dispatch(toggleDefaulterDrawer());
   };
 
   const handleExport = async () => {
@@ -165,8 +180,8 @@ export const useDefaulters = () => {
   return {
     searchTerm,
     setSearchTerm,
-    selectedDefaulter,
     setSelectedDefaulter,
+    toggleDefaulterDrawer: toggleDefaulterDrawerHandler,
     handleExport,
     currentPage,
     itemsPerPage,
@@ -178,5 +193,6 @@ export const useDefaulters = () => {
     handleSort,
     isLoading: apiState.defaulters,
     isExporting: apiState.defaultersReport,
+    getMessageHistory,
   };
 };
