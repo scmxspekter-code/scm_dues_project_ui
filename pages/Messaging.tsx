@@ -1,20 +1,20 @@
 
 import React from 'react';
-import { Send, Wand2, Clock, History, LayoutTemplate, Smartphone } from 'lucide-react';
-import { generateDuesReminder } from '../services/geminiService';
+import { Send, Wand2, Clock, History, LayoutTemplate, Smartphone, Users } from 'lucide-react';
+import { useMessaging } from '../hooks/useMessaging';
+import { CustomSelect } from '../components/CustomSelect';
 
 export const Messaging: React.FC = () => {
-  const [recipientType, setRecipientType] = React.useState('defaulters');
-  const [channel, setChannel] = React.useState('whatsapp');
-  const [message, setMessage] = React.useState("");
-  const [isGenerating, setIsGenerating] = React.useState(false);
-
-  const handleAiGenerate = async () => {
-    setIsGenerating(true);
-    const content = await generateDuesReminder("[Member Name]", 50000, "Feb 28, 2025");
-    setMessage(content);
-    setIsGenerating(false);
-  };
+  const {
+    recipientType,
+    setRecipientType,
+    channel,
+    setChannel,
+    message,
+    setMessage,
+    isGenerating,
+    handleAiGenerate,
+  } = useMessaging();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -29,17 +29,21 @@ export const Messaging: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase">Target Audience</label>
-                <select 
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                <CustomSelect
+                  label="Target Audience"
+                  labelClassName="text-xs font-bold text-slate-400 uppercase"
                   value={recipientType}
-                  onChange={(e) => setRecipientType(e.target.value)}
-                >
-                  <option value="defaulters">All Defaulters (72)</option>
-                  <option value="paid">All Paid Members (84)</option>
-                  <option value="all">Everyone (156)</option>
-                  <option value="custom">Specific Member</option>
-                </select>
+                  onChange={(value) => setRecipientType(value as any)}
+                  leftIcon={<Users size={16} />}
+                  options={[
+                    { value: 'defaulters', label: 'All Defaulters (72)' },
+                    { value: 'paid', label: 'All Paid Members (84)' },
+                    { value: 'all', label: 'Everyone (156)' },
+                    { value: 'custom', label: 'Specific Member' },
+                  ]}
+                  size="md"
+                  className="p-3"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase">Delivery Channel</label>

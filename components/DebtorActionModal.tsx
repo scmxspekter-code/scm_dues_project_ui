@@ -16,7 +16,7 @@ export const DebtorActionModal: React.FC<DebtorActionModalProps> = ({ member, on
 
   const handleAiGenerate = async () => {
     setIsGenerating(true);
-    const content = await generateDuesReminder(member.name, member.amountDue, "Next Friday");
+    const content = await generateDuesReminder(member.name, member.amount, "Next Friday");
     setCustomMsg(content);
     setIsGenerating(false);
   };
@@ -38,7 +38,7 @@ export const DebtorActionModal: React.FC<DebtorActionModalProps> = ({ member, on
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">{member.name}</h3>
-              <p className="text-sm text-slate-500 font-medium">Owes ₦{member.amountDue.toLocaleString()}</p>
+              <p className="text-sm text-slate-500 font-medium">Owes ₦{member.amount.toLocaleString()}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">

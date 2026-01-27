@@ -1,114 +1,185 @@
 
-import React from 'react';
-// Fix: Removed WhatsApp from lucide-react import as it is defined locally at the bottom of the file
-import { Search, Filter, Plus, Mail, Phone } from 'lucide-react';
-import { Member, PaymentStatus } from '../types';
-
-const mockMembers: Member[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', phone: '08012345678', status: PaymentStatus.PAID, amountDue: 0, joinedDate: '2024-01-15' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', phone: '08123456789', status: PaymentStatus.DEFAULTER, amountDue: 50000, joinedDate: '2023-06-20' },
-  { id: '3', name: 'Ayo Balogun', email: 'ayo@example.com', phone: '09033344455', status: PaymentStatus.PENDING, amountDue: 50000, joinedDate: '2024-02-10' },
-  { id: '4', name: 'Sarah Connor', email: 'sarah@example.com', phone: '07011223344', status: PaymentStatus.PAID, amountDue: 0, joinedDate: '2022-11-05' },
-  { id: '5', name: 'Chidi Anagonye', email: 'chidi@example.com', phone: '08155667788', status: PaymentStatus.DEFAULTER, amountDue: 75000, joinedDate: '2023-12-01' },
-];
+import React, { useState } from 'react';
+import { Search, Filter, Plus, Mail, Phone, ArrowUpDown, Loader2 } from 'lucide-react';
+import { useMembers } from '../hooks/useMembers';
+import { AddMemberDrawer } from '../components/AddMemberDrawer';
+import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
+import { Member } from '../types';
+import { Input } from '../components/Input';
+import { Dropdown } from '../components/Dropdown';
+import { Pagination } from '../components/Pagination';
+import { Table } from '../components/Table';
+import { formatDate } from 'date-fns';
 
 export const Members: React.FC = () => {
-  const [searchTerm, setSearchTerm] = React.useState("");
-
-  const filteredMembers = mockMembers.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const { 
+    searchTerm, 
+    setSearchTerm, 
+    members, 
+    toggleAddMemberDrawer,
+    paginationMeta,
+    handlePageChange,
+    handleItemsPerPageChange,
+    isLoading,
+  } = useMembers();
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search members by name or email..." 
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+    <>
+       <AddMemberDrawer />
+    <div className="flex flex-col h-full space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+        <div className="flex-1 max-w-md">
+          <Input
+            type="text"
+            placeholder="Search members by name or email..."
+            leftIcon={<Search size={18} />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            size="md"
+            className="bg-white border-slate-200  h-full"
+            containerClassName="space-y-0 "
           />
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-600 font-medium">
-            <Filter size={18} />
-            <span>Filter</span>
-          </button>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium">
+          <Dropdown
+            trigger={
+              <button className="flex items-center space-x-2 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-600 font-medium">
+                <Filter size={18} />
+                <span>Filter</span>
+              </button>
+            }
+            items={[
+              { label: 'All Members', onClick: () => console.log('All') },
+              { label: 'Paid Only', onClick: () => console.log('Paid') },
+              { label: 'Pending', onClick: () => console.log('Pending') },
+              { divider: true },
+              { label: 'Defaulters', onClick: () => console.log('Defaulters') },
+            ]}
+            placement="bottom-right"
+          />
+          <button 
+            onClick={toggleAddMemberDrawer}
+            className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium"
+          >
             <Plus size={18} />
             <span>Add Member</span>
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Member</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Dues Owed</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Contact</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredMembers.map((member) => (
-              <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold">
-                      {member.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-800">{member.name}</div>
-                      <div className="text-xs text-slate-400 italic">Joined {member.joinedDate}</div>
-                    </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
+        <Table<Member>
+          columns={[
+            {
+              header: 'Member',
+              accessor: (member) => (
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold">
+                    {member.name.charAt(0)}
                   </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    member.status === PaymentStatus.PAID 
-                      ? 'bg-emerald-50 text-emerald-600' 
-                      : member.status === PaymentStatus.DEFAULTER 
-                        ? 'bg-red-50 text-red-600' 
-                        : 'bg-amber-50 text-amber-600'
-                  }`}>
-                    {member.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="font-semibold text-slate-700">₦{member.amountDue.toLocaleString()}</span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><Mail size={16} /></button>
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><Phone size={16} /></button>
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><WhatsApp size={16} /></button>
+                  <div>
+                    <div className="font-bold text-slate-800">{member.name}</div>
+                    <div className="text-xs text-slate-400 italic">Joined {formatDate(new Date(member.createdAt), 'dd MM yyyy')}</div>
                   </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-cyan-600 font-bold text-sm hover:underline">View Profile</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {filteredMembers.length === 0 && (
-          <div className="py-20 text-center flex flex-col items-center">
-            <div className="bg-slate-50 p-4 rounded-full mb-4">
-              <Search className="text-slate-300" size={40} />
+                </div>
+              ),
+            },
+            {
+              header: 'Status',
+              accessor: (member) => (
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  member.paymentStatus === 'paid' 
+                    ? 'bg-emerald-50 text-emerald-600' 
+                    : member.paymentStatus === 'failed' 
+                      ? 'bg-red-50 text-red-600' 
+                      : 'bg-amber-50 text-amber-600'
+                }`}>
+                  {member.paymentStatus.charAt(0).toUpperCase() + member.paymentStatus.slice(1)}
+                </span>
+              ),
+            },
+            {
+              header: 'Dues Owed',
+              accessor: (member) => (
+                <span className="font-semibold text-slate-700">₦{member.amount.toLocaleString()}</span>
+              ),
+            },
+            {
+              header: 'Contact',
+              accessor: () => (
+                <div className="flex items-center space-x-2">
+                  <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><Mail size={16} /></button>
+                  <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><Phone size={16} /></button>
+                  <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"><WhatsApp size={16} /></button>
+                </div>
+              ),
+            },
+            {
+              header: 'Actions',
+              align: 'right',
+              accessor: (member) => (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedMember(member);
+                    setIsDetailDrawerOpen(true);
+                  }}
+                  className="text-cyan-600 font-bold text-sm hover:underline"
+                >
+                  View Profile
+                </button>
+              ),
+            },
+          ]}
+          data={members}
+          isLoading={isLoading}
+          emptyState={
+            <div className="py-20 text-center flex flex-col items-center">
+              <div className="bg-slate-50 p-4 rounded-full mb-4">
+                <Search className="text-slate-300" size={40} />
+              </div>
+              <h5 className="font-bold text-slate-800 text-lg">No members found</h5>
+              <p className="text-slate-400 text-sm">Try adjusting your search filters.</p>
             </div>
-            <h5 className="font-bold text-slate-800 text-lg">No members found</h5>
-            <p className="text-slate-400 text-sm">Try adjusting your search filters.</p>
+          }
+          loadingState={undefined}
+          containerClassName="flex-1 min-h-0 border-0 shadow-none rounded-none"
+        />
+        
+        {/* Pagination */}
+      
+          <div className="flex-shrink-0 border-t border-slate-100">
+            <Pagination
+              meta={paginationMeta}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              className="bg-transparent"
+              disabled={isLoading}
+            />
           </div>
-        )}
+    
       </div>
     </div>
+
+    {/* Member Detail Drawer */}
+    <MemberDetailDrawer
+      member={selectedMember}
+      isOpen={isDetailDrawerOpen}
+      onClose={() => {
+        setIsDetailDrawerOpen(false);
+        setSelectedMember(null);
+      }}
+      onEdit={(member) => {
+        // TODO: Implement edit functionality
+        console.log('Edit member:', member);
+      }}
+      onSendReminder={(member) => {
+        // TODO: Implement send reminder functionality
+        console.log('Send reminder to:', member);
+      }}
+    />
+    </>
   );
 };
 

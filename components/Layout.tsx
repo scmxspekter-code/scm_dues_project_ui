@@ -13,6 +13,8 @@ import {
   X,
   AlertTriangle
 } from 'lucide-react';
+import { useAppDispatch,useAppSelector } from '@/store/hooks';
+import { logout } from '@/store/slices/authSlice';
 
 const SidebarItem: React.FC<{ to: string; icon: React.ReactNode; label: string; active: boolean }> = ({ to, icon, label, active }) => (
   <Link 
@@ -28,9 +30,11 @@ const SidebarItem: React.FC<{ to: string; icon: React.ReactNode; label: string; 
   </Link>
 );
 
-export const Layout: React.FC<{ children: React.ReactNode; onLogout?: () => void }> = ({ children, onLogout }) => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth); 
 
   const menuItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
@@ -82,7 +86,7 @@ export const Layout: React.FC<{ children: React.ReactNode; onLogout?: () => void
 
           <div className="mt-auto border-t border-slate-100 pt-6">
             <button 
-              onClick={onLogout}
+              onClick={()=>dispatch(logout())}
               className="flex items-center space-x-3 px-4 py-3 text-slate-500 hover:text-red-500 transition-colors w-full text-left"
             >
               <LogOut size={20} />
@@ -104,7 +108,7 @@ export const Layout: React.FC<{ children: React.ReactNode; onLogout?: () => void
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden ring-2 ring-slate-100 ring-offset-2">
-              <img src="https://picsum.photos/seed/admin/100" alt="Admin" />
+              <img src="https://picsum.photos/seed/admin/100" alt="Admin" />  
             </div>
           </div>
         </header>

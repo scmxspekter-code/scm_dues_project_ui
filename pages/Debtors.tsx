@@ -3,6 +3,7 @@ import React from 'react';
 import { Search, Download, History, MessageSquare, ArrowUpDown, Filter } from 'lucide-react';
 import { Member, PaymentStatus } from '../types';
 import { DebtorActionModal } from '../components/DebtorActionModal';
+import { Input } from '../components/Input';
 
 const mockDebtors: Member[] = [
   { 
@@ -44,14 +45,16 @@ export const Debtors: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search debtors by name..." 
-            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-medium"
+        <div className="flex-1 max-w-md">
+          <Input
+            type="text"
+            placeholder="Search debtors by name..."
+            leftIcon={<Search size={18} />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            size="md"
+            className="bg-white border-slate-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/10"
+            containerClassName="space-y-0"
           />
         </div>
         <div className="flex items-center space-x-3">
