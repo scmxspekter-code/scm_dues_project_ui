@@ -1,10 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  Member,
-  PaginationMeta,
-  DefaultersStats,
-  MessageLog,
-} from '../types';
+import { Member, PaginationMeta, DefaultersStats, MessageLog } from '../types';
 import {
   setDefaulters,
   toggleDefaulterDrawer,
