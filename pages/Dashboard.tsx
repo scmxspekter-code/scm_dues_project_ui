@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -11,22 +11,10 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import {
-  TrendingUp,
-  Users,
-  AlertCircle,
-  CheckCircle,
-  BrainCircuit,
-  CreditCard,
-} from 'lucide-react';
+import { TrendingUp, Users, AlertCircle, CheckCircle, CreditCard } from 'lucide-react';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAppSelector } from '@/store/hooks';
-import {
-  StatCardSkeleton,
-  ChartSkeleton,
-  PieChartSkeleton,
-  AIBannerSkeleton,
-} from '../components/Skeleton';
+import { StatCardSkeleton, ChartSkeleton, PieChartSkeleton } from '../components/Skeleton';
 
 const StatCard: React.FC<{
   title: string;
@@ -51,32 +39,14 @@ const StatCard: React.FC<{
 );
 
 export const Dashboard: React.FC = () => {
-  const { aiAnalysis, chartData, COLORS, apiState } = useDashboard();
-  const { stats, pieData } = useAppSelector((state) => state.dashboard);
+  const { COLORS, apiState, getChartData } = useDashboard();
+  const { stats, pieData, chartData } = useAppSelector((state) => state.dashboard);
   const isLoading = apiState.stats;
+  const isLoadingChart = apiState.paymentsReport;
+  const [selectedPeriod, setSelectedPeriod] = useState<'6months' | 'year'>('6months');
 
   return (
     <div className="space-y-8">
-      {/* AI Insight Banner */}
-      {isLoading ? (
-        <AIBannerSkeleton />
-      ) : (
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 text-white shadow-xl shadow-cyan-100 flex items-start space-x-4">
-          <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
-            <BrainCircuit size={28} className="text-white" />
-          </div>
-          <div>
-            <h4 className="font-bold text-lg mb-1 flex items-center">
-              AI Collection Insight
-              <span className="ml-2 text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter font-normal">
-                Gemini 3 Powered
-              </span>
-            </h4>
-            <p className="text-cyan-50 text-sm leading-relaxed max-w-3xl">{aiAnalysis}</p>
-          </div>
-        </div>
-      )}
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading ? (
@@ -119,7 +89,7 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Collection Chart */}
-        {isLoading ? (
+        {isLoading || isLoadingChart ? (
           <div className="lg:col-span-2">
             <ChartSkeleton />
           </div>
@@ -127,39 +97,64 @@ export const Dashboard: React.FC = () => {
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-8">
               <h4 className="font-bold text-slate-800">Dues Collection Trend</h4>
-              <select className="bg-slate-50 border-none text-sm font-medium text-slate-500 rounded-lg px-3 py-1 outline-none">
-                <option>Last 6 Months</option>
-                <option>Last Year</option>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => {
+                  const period = e.target.value as '6months' | 'year';
+                  setSelectedPeriod(period);
+                  getChartData(period);
+                }}
+                className="bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
+              >
+                <option value="6months">Last 6 Months</option>
+                <option value="year">Last Year</option>
               </select>
             </div>
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 12 }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 12 }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{
-                      borderRadius: '12px',
-                      border: 'none',
-                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                    }}
-                  />
-                  <Bar dataKey="amount" fill="#06b6d4" radius={[6, 6, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {chartData.length > 0 ? (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#64748b"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `₦${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      }}
+                      formatter={(value: number) => [
+                        `₦${value.toLocaleString()}`,
+                        'Amount Collected',
+                      ]}
+                    />
+                    <Bar dataKey="amount" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-72 w-full flex items-center justify-center text-slate-400">
+                <div className="text-center">
+                  <p className="text-sm font-medium">No collection data available</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Data will appear here once payments are recorded
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

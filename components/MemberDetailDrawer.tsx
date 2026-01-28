@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   X,
   User,
-  Mail,
   Phone,
   Calendar,
   DollarSign,
@@ -14,15 +13,23 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  ChevronLeft,
 } from 'lucide-react';
 import classNames from 'classnames';
-import { PaymentStatus } from '../types';
+import { PaymentStatus, MessageLog } from '../types';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleMemberDrawer } from '@/store/slices/membersSlice';
+import { useMembers } from '@/hooks/useMembers';
+import { CustomSelect } from './CustomSelect';
 
 export const MemberDetailDrawer: React.FC = () => {
   const { member, isDrawerOpen } = useAppSelector((state) => state.members);
   const dispatch = useAppDispatch();
+  const { sendReminder, getReminderHistory, markAsPaid } = useMembers();
+  const [reminderHistory, setReminderHistory] = useState<MessageLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -35,6 +42,29 @@ export const MemberDetailDrawer: React.FC = () => {
       document.body.style.overflow = 'unset';
     };
   }, [isDrawerOpen]);
+
+  // Fetch reminder history when drawer opens
+  const fetchReminderHistory = useCallback(async (): Promise<void> => {
+    if (!member?.id) return;
+    setIsLoadingHistory(true);
+    try {
+      const history = await getReminderHistory(member.id, { page: 1, limit: 10 });
+      setReminderHistory(history);
+    } catch {
+      setReminderHistory([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [member?.id, getReminderHistory]);
+
+  useEffect(() => {
+    if (isDrawerOpen && member?.id) {
+      fetchReminderHistory();
+    } else {
+      // Clear history when drawer closes
+      setReminderHistory([]);
+    }
+  }, [isDrawerOpen, member?.id, fetchReminderHistory]);
 
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
@@ -62,7 +92,7 @@ export const MemberDetailDrawer: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -72,251 +102,374 @@ export const MemberDetailDrawer: React.FC = () => {
     });
   };
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     dispatch(toggleMemberDrawer());
   };
 
+  const handleSendReminder = async (): Promise<void> => {
+    if (!member) return;
+    setIsSending(true);
+    try {
+      await sendReminder(member.id, selectedChannel);
+      // Refresh reminder history to show the newly sent reminder
+      await fetchReminderHistory();
+    } catch {
+      // Error already handled in hook
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleMarkAsPaid = async (): Promise<void> => {
+    if (!member) return;
+    try {
+      await markAsPaid(member.id);
+      dispatch(toggleMemberDrawer());
+    } catch {
+      // Error already handled in hook
+    }
+  };
+
+  if (!member) return null;
+
   return (
     <>
-      {/* Backdrop */}
-      {isDrawerOpen && (
-        <div
-          className={classNames(
-            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out ',
-            { 'opacity-100': isDrawerOpen }
-          )}
-          onClick={handleClose}
-        />
-      )}
-
-      {/* Drawer */}
+      {/* Backdrop - Always rendered for smooth animation */}
       <div
         className={classNames(
-          'fixed top-0 right-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto translate-x-full',
+          'fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out',
           {
-            'translate-x-0': isDrawerOpen,
+            'opacity-100 pointer-events-auto': isDrawerOpen,
+            'opacity-0 pointer-events-none': !isDrawerOpen,
           }
         )}
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer - Always rendered for smooth animation */}
+      <div
+        className={classNames(
+          'fixed inset-y-0 right-0 h-full w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-hidden',
+          'sm:max-w-md lg:max-w-lg xl:max-w-xl',
+          {
+            'translate-x-0': isDrawerOpen,
+            'translate-x-full': !isDrawerOpen,
+          }
+        )}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-drawer-title"
+        aria-hidden={!isDrawerOpen}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-2xl shadow-lg">
-                {member?.name.charAt(0)}
+          {/* Header - Responsive */}
+          <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50">
+            <div className="grid grid-cols-4items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+              {/* Mobile back button */}
+              <button
+                onClick={handleClose}
+                className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700 flex-shrink-0"
+                aria-label="Close drawer"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              {/* Avatar */}
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-lg flex-shrink-0">
+                {member.name.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">{member?.name}</h2>
-                <p className="text-sm text-slate-500 mt-1">Member Profile</p>
+
+              {/* Name and subtitle */}
+              <div className="min-w-0 flex-1">
+                <h2
+                  id="member-drawer-title"
+                  className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 truncate"
+                >
+                  {member.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Member Profile</p>
               </div>
             </div>
+
+            {/* Desktop close button */}
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700"
+              className="hidden lg:flex p-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700 flex-shrink-0"
+              aria-label="Close drawer"
             >
               <X size={20} />
             </button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 p-6 space-y-6">
-            {/* Status Badge */}
-            <div className="flex items-center justify-between">
-              <div
-                className={classNames(
-                  'flex items-center space-x-2 px-4 py-2 rounded-xl border font-bold',
-                  getStatusColor(member?.status || PaymentStatus.PENDING)
-                )}
-              >
-                {getStatusIcon(member?.status || PaymentStatus.PENDING)}
-                <span>{member?.status}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {member && (
+          {/* Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              {/* Status Badge and Actions - Responsive */}
+              <div className="flex   sm:items-center  gap-3 sm:gap-4">
+                <div className="grid gap-2">
+                  <div
+                    className={classNames(
+                      'flex  items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border font-bold text-sm sm:text-base w-full sm:w-auto',
+                      getStatusColor(member.paymentStatus || PaymentStatus.PENDING)
+                    )}
+                  >
+                    {getStatusIcon(member.paymentStatus || PaymentStatus.PENDING)}
+                    <span className="capitalize">{member.paymentStatus}</span>
+                  </div>
+                  {/* Edit Button - Hidden on mobile, shown on desktop */}
                   <button
-                    onClick={() => console.log('edit member')}
-                    className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-700 font-medium"
+                    onClick={() => {
+                      // TODO: Implement edit member functionality
+                    }}
+                    className="hidden sm:flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium text-sm sm:text-base"
                   >
                     <Edit size={16} />
                     <span>Edit</span>
                   </button>
-                )}
-                {member && (
-                  <button
-                    onClick={() => console.log('send reminder')}
-                    className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-xl transition-colors text-white font-medium shadow-lg shadow-cyan-100"
-                  >
-                    <MessageSquare size={16} />
-                    <span>Send Reminder</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Basic Information */}
-            <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Basic Information</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <User className="text-cyan-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Full Name
-                    </p>
-                    <p className="text-slate-800 font-semibold mt-1">{member?.name}</p>
-                  </div>
                 </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <Mail className="text-cyan-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Email
-                    </p>
-                    <p className="text-slate-800 font-semibold mt-1">{member?.email || 'N/A'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <Phone className="text-cyan-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Phone
-                    </p>
-                    <p className="text-slate-800 font-semibold mt-1">{member?.phoneNumber}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <Calendar className="text-cyan-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Joined Date
-                    </p>
-                    <p className="text-slate-800 font-semibold mt-1">
-                      {formatDate(member?.joinedDate || '')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Information */}
-            <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Payment Information</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <DollarSign className="text-cyan-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Amount Due
-                    </p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">
-                      ₦{member?.amount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                {member?.lastPaymentDate && (
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-white rounded-lg">
-                      <CreditCard className="text-cyan-600" size={20} />
+                {/* Action Buttons - Stack on mobile, horizontal on desktop */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
+                  {/* Send Reminder - Full width on mobile */}
+                  <div className="grid items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <div className="flex-1 sm:flex-none min-w-[140px]">
+                      <CustomSelect
+                        value={selectedChannel}
+                        onChange={(value) => setSelectedChannel(value as 'sms' | 'whatsapp')}
+                        options={[
+                          { value: 'whatsapp', label: 'WhatsApp' },
+                          { value: 'sms', label: 'SMS' },
+                        ]}
+                        size="sm"
+                        className="bg-white border-slate-200"
+                        containerClassName="space-y-0"
+                      />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        Last Payment
-                      </p>
-                      <p className="text-slate-800 font-semibold mt-1">
-                        {formatDate(member?.lastPaymentDate || '')}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Reminder History */}
-            {member?.reminderHistory && member?.reminderHistory.length > 0 && (
-              <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
-                    <Bell className="text-cyan-600" size={20} />
-                    <span>Reminder History</span>
-                  </h3>
-                  <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full">
-                    {member?.reminderHistory?.length || 0} Sent
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {member?.reminderHistory?.map((reminder) => (
-                    <div
-                      key={reminder.id}
-                      className="bg-white rounded-xl p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
+                    <button
+                      onClick={handleSendReminder}
+                      disabled={isSending}
+                      className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg sm:rounded-xl transition-colors text-white font-medium shadow-lg shadow-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-slate-800 font-medium">{reminder.content || ''}</p>
-                          <div className="flex items-center space-x-4 mt-2">
-                            <span className="text-xs text-slate-500 flex items-center space-x-1">
-                              <Calendar size={12} />
-                              <span>{formatDate(reminder.date || '')}</span>
-                            </span>
-                            <span className="text-xs text-slate-500 flex items-center space-x-1">
-                              <MessageSquare size={12} />
-                              <span>{reminder.type || ''}</span>
-                            </span>
-                          </div>
-                        </div>
-                        <span
-                          className={classNames(
-                            'px-2 py-1 rounded-full text-xs font-bold',
-                            reminder.status === 'Delivered'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : 'bg-red-50 text-red-600'
-                          )}
-                        >
-                          {reminder.status || ''}
-                        </span>
+                      <MessageSquare size={16} />
+                      <span className="whitespace-nowrap">
+                        {isSending ? 'Sending...' : 'Send Reminder'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic Information */}
+              <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
+                <h3 className="text-base sm:text-lg font-bold text-slate-800">Basic Information</h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                      <User className="text-cyan-600" size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Full Name
+                      </p>
+                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1 break-words">
+                        {member.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                      <Phone className="text-cyan-600" size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Phone
+                      </p>
+                      <a
+                        href={`tel:${member.phoneNumber}`}
+                        className="text-sm sm:text-base text-slate-800 font-semibold mt-1 hover:text-cyan-600 transition-colors break-all"
+                      >
+                        {member.phoneNumber}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                      <Calendar className="text-cyan-600" size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Due Date
+                      </p>
+                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                        {formatDate(member.dueDate)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {member.dob && (
+                    <div className="flex items-start space-x-3">
+                      <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                        <Calendar className="text-cyan-600" size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          Date of Birth
+                        </p>
+                        <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                          {formatDate(member.dob)}
+                        </p>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {member.anniversary && (
+                    <div className="flex items-start space-x-3 sm:col-span-2">
+                      <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                        <Calendar className="text-cyan-600" size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          Anniversary
+                        </p>
+                        <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                          {formatDate(member.anniversary)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* Quick Actions */}
-            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-xl transition-colors text-slate-700 font-medium border border-slate-200">
-                  <Mail size={18} />
-                  <span>Send Email</span>
-                </button>
-                <button className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-xl transition-colors text-slate-700 font-medium border border-slate-200">
-                  <Phone size={18} />
-                  <span>Call</span>
-                </button>
-                <button className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-xl transition-colors text-slate-700 font-medium border border-slate-200">
-                  <History size={18} />
-                  <span>View History</span>
-                </button>
-                <button className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-xl transition-colors text-slate-700 font-medium border border-slate-200">
-                  <CreditCard size={18} />
-                  <span>Record Payment</span>
-                </button>
+              {/* Payment Information */}
+              <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
+                <h3 className="text-base sm:text-lg font-bold text-slate-800">
+                  Payment Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                      <DollarSign className="text-cyan-600" size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Amount Due
+                      </p>
+                      <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-1">
+                        ₦{member.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                      <Bell className="text-cyan-600" size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Reminder Frequency
+                      </p>
+                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1 capitalize">
+                        {member.reminderFrequency}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reminder History */}
+              <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
+                    <Bell className="text-cyan-600" size={18} />
+                    <span>Reminder History</span>
+                  </h3>
+                  {reminderHistory.length > 0 && (
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 bg-white px-2 sm:px-3 py-1 rounded-full w-fit">
+                      {reminderHistory.length} Sent
+                    </span>
+                  )}
+                </div>
+
+                {isLoadingHistory ? (
+                  <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                    Loading reminder history...
+                  </div>
+                ) : reminderHistory.length > 0 ? (
+                  <div className="space-y-2 sm:space-y-3">
+                    {reminderHistory.map((reminder) => (
+                      <div
+                        key={reminder.id}
+                        className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm sm:text-base text-slate-800 font-medium break-words">
+                              {reminder.content}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
+                              <span className="text-[10px] sm:text-xs text-slate-500 flex items-center space-x-1">
+                                <Calendar size={12} />
+                                <span>{formatDate(reminder.createdAt)}</span>
+                              </span>
+                              <span className="text-[10px] sm:text-xs text-slate-500 flex items-center space-x-1">
+                                <MessageSquare size={12} />
+                                <span className="capitalize">{reminder.channel}</span>
+                              </span>
+                            </div>
+                            {reminder.errorMessage && (
+                              <p className="text-[10px] sm:text-xs text-red-500 mt-2 break-words">
+                                {reminder.errorMessage}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className={classNames(
+                              'px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold capitalize whitespace-nowrap flex-shrink-0',
+                              reminder.status === 'delivered'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : reminder.status === 'failed'
+                                  ? 'bg-red-50 text-red-600'
+                                  : 'bg-amber-50 text-amber-600'
+                            )}
+                          >
+                            {reminder.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                    No reminders sent yet. Send a reminder to see history here.
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-4">
+                  Quick Actions
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <button
+                    onClick={fetchReminderHistory}
+                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm sm:text-base"
+                  >
+                    <History size={18} />
+                    <span>Refresh History</span>
+                  </button>
+                  <button
+                    onClick={handleMarkAsPaid}
+                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm sm:text-base"
+                  >
+                    <CreditCard size={18} />
+                    <span>Mark as Paid</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

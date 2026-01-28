@@ -1,5 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { Member, PaginationMeta, PaymentStatus } from '../types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Member,
+  PaginationMeta,
+  DefaultersStats,
+  MessageLog,
+} from '../types';
 import {
   setDefaulters,
   toggleDefaulterDrawer,
@@ -7,7 +12,7 @@ import {
 } from '@/store/slices/defaultersSlice';
 import { $api } from '@/api';
 import { IReportParams } from '@/api/defaulter.repository';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { debounce } from '@/utils/debounce';
 import toast from 'react-hot-toast';
 
@@ -18,9 +23,10 @@ export const useDefaulters = () => {
   const [apiState, setApiState] = useState({
     defaulters: false,
     defaultersReport: false,
+    markAsDefaulted: false,
+    getDefaultersStats: false,
   });
   const dispatch = useAppDispatch();
-  const { defaulters } = useAppSelector((state) => state.defaulters);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -69,22 +75,36 @@ export const useDefaulters = () => {
       if (response.meta) {
         setPaginationMeta(response.meta);
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch defaulters');
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch defaulters');
+      } else {
+        toast.error('Failed to fetch defaulters');
+      }
       throw error;
     } finally {
       setApiState((prev) => ({ ...prev, defaulters: false }));
     }
   };
-  const getMessageHistory = async (id: string) => {
-    try {
-      const response = await $api.messaging.getMessageHistory(id);
-      return response.data;
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch message history');
-      throw error;
-    }
-  };
+  const getMessageHistory = useCallback(
+    async (
+      id: string,
+      params?: { page?: number; limit?: number }
+    ): Promise<MessageLog[] | undefined> => {
+      try {
+        const response = await $api.messaging.getMessageHistory(id, params);
+        return response.data;
+      } catch (error: unknown) {
+        if (isApiError(error)) {
+          toast.error(error.message || 'Failed to fetch message history');
+        } else {
+          toast.error('Failed to fetch message history');
+        }
+        throw error;
+      }
+    },
+    []
+  );
   // Fetch defaulters when page, items per page, search term, or sort changes
   useEffect(() => {
     getDefaulters({
@@ -123,53 +143,65 @@ export const useDefaulters = () => {
     dispatch(toggleDefaulterDrawer());
   };
 
-  const handleExport = async () => {
+  const markAsDefaulted = async (id: string, memberName?: string): Promise<void> => {
+    // Show confirmation dialog
+    if (
+      !window.confirm(`Are you sure you want to mark ${memberName || 'this member'} as defaulted?`)
+    ) {
+      return;
+    }
+
+    try {
+      setApiState((prev) => ({ ...prev, markAsDefaulted: true }));
+      const { data } = await $api.members.markAsDefaulted(id);
+      if (data) {
+        // Refresh defaulters list
+        await getDefaulters({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearchTerm || undefined,
+        });
+        toast.success('Member marked as defaulted');
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to mark as defaulted');
+      } else {
+        toast.error('Failed to mark as defaulted');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, markAsDefaulted: false }));
+    }
+  };
+
+  const getDefaultersStats = async (): Promise<DefaultersStats | undefined> => {
+    try {
+      setApiState((prev) => ({ ...prev, getDefaultersStats: true }));
+      const { data } = await $api.members.getDefaultersStats();
+      return data;
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch defaulters stats');
+      } else {
+        toast.error('Failed to fetch defaulters stats');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getDefaultersStats: false }));
+    }
+  };
+
+  const handleExport = async (): Promise<void> => {
     try {
       setApiState((prev) => ({ ...prev, defaultersReport: true }));
 
-      // Fetch all defaulters for export (no pagination)
-      const response = await $api.defaulters.getDefaulters({
-        limit: 10000, // Large limit to get all
+      // Use API export endpoint
+      const blob = await $api.members.exportCollections({
+        limit: 10000,
         search: debouncedSearchTerm || undefined,
       });
 
-      const defaultersToExport = response.data || [];
-
-      // Create CSV content
-      const headers =
-        'ID,Name,Phone Number,Amount Owed,Currency,Due Date,Payment Status,Reminder Frequency,Created At\n';
-      const rows = defaultersToExport
-        .map((d) => {
-          const escapeCSV = (value: any) => {
-            if (value === null || value === undefined) return '';
-            const stringValue = String(value);
-            // Escape quotes and wrap in quotes if contains comma, newline, or quote
-            if (
-              stringValue.includes(',') ||
-              stringValue.includes('\n') ||
-              stringValue.includes('"')
-            ) {
-              return `"${stringValue.replace(/"/g, '""')}"`;
-            }
-            return stringValue;
-          };
-
-          return [
-            escapeCSV(d.id),
-            escapeCSV(d.name),
-            escapeCSV(d.phoneNumber),
-            escapeCSV(d.amount),
-            escapeCSV(d.currency),
-            escapeCSV(d.dueDate),
-            escapeCSV(d.paymentStatus),
-            escapeCSV(d.reminderFrequency),
-            escapeCSV(d.createdAt),
-          ].join(',');
-        })
-        .join('\n');
-
-      const csvContent = headers + rows;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -180,10 +212,58 @@ export const useDefaulters = () => {
       window.URL.revokeObjectURL(url);
 
       toast.success('Defaulters exported successfully');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to export defaulters');
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to export defaulters');
+      } else {
+        toast.error('Failed to export defaulters');
+      }
     } finally {
       setApiState((prev) => ({ ...prev, defaultersReport: false }));
+    }
+  };
+
+  // DefaulterActionModal logic
+  const [reminderHistory, setReminderHistory] = useState<MessageLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
+
+  const fetchReminderHistory = useCallback(
+    async (memberId: string): Promise<void> => {
+      if (!memberId) return;
+      setIsLoadingHistory(true);
+      try {
+        const history = await getMessageHistory(memberId);
+        setReminderHistory(history || []);
+      } catch {
+        setReminderHistory([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    },
+    [getMessageHistory]
+  );
+
+  const sendReminderToDefaulter = async (
+    memberId: string,
+    channel: 'sms' | 'whatsapp'
+  ): Promise<void> => {
+    setIsSendingReminder(true);
+    try {
+      await $api.members.sendReminder(memberId, channel);
+      toast.success('Reminder sent successfully');
+      // Refresh history after sending
+      await fetchReminderHistory(memberId);
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to send reminder');
+      } else {
+        toast.error('Failed to send reminder');
+      }
+      throw error;
+    } finally {
+      setIsSendingReminder(false);
     }
   };
 
@@ -193,6 +273,8 @@ export const useDefaulters = () => {
     setSelectedDefaulter,
     toggleDefaulterDrawer: toggleDefaulterDrawerHandler,
     handleExport,
+    markAsDefaulted,
+    getDefaultersStats,
     currentPage,
     itemsPerPage,
     paginationMeta,
@@ -204,5 +286,13 @@ export const useDefaulters = () => {
     isLoading: apiState.defaulters,
     isExporting: apiState.defaultersReport,
     getMessageHistory,
+    // DefaulterActionModal state and functions
+    reminderHistory,
+    isLoadingHistory,
+    isSendingReminder,
+    selectedChannel,
+    setSelectedChannel,
+    fetchReminderHistory,
+    sendReminderToDefaulter,
   };
 };

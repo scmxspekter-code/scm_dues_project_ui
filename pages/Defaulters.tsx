@@ -23,8 +23,7 @@ export const Defaulters: React.FC = () => {
     setSearchTerm,
     setSelectedDefaulter,
     handleExport,
-    currentPage,
-    itemsPerPage,
+    markAsDefaulted,
     paginationMeta,
     handlePageChange,
     handleItemsPerPageChange,
@@ -129,7 +128,9 @@ export const Defaulters: React.FC = () => {
                     {defaulter.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800 text-base whitespace-nowrap">{defaulter.name}</div>
+                    <div className="font-bold text-slate-800 text-base whitespace-nowrap">
+                      {defaulter.name}
+                    </div>
                     <div className="text-sm text-slate-400 font-medium whitespace-nowrap">
                       {defaulter.phoneNumber}
                     </div>
@@ -142,11 +143,9 @@ export const Defaulters: React.FC = () => {
               header: 'Reminders Sent',
               align: 'center',
               headerClassName: 'px-8 py-5 text-[10px]',
-              accessor: (defaulter) => (
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${(defaulter as any).reminderHistory?.length ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}
-                >
-                  {(defaulter as any).reminderHistory?.length || 0} Sent
+              accessor: () => (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-50 text-slate-400">
+                  0 Sent
                 </span>
               ),
               className: 'px-8 py-5',
@@ -181,6 +180,16 @@ export const Defaulters: React.FC = () => {
                     title="View History"
                   >
                     <History size={18} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      markAsDefaulted(defaulter.id, defaulter.name);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-all"
+                    title="Mark as Defaulted"
+                  >
+                    Mark Defaulted
                   </button>
                   <button
                     onClick={(e) => {

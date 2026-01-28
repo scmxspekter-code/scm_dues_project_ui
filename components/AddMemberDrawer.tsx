@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
-import { Formik } from 'formik';
+import { Formik, FormikProps } from 'formik';
 import classNames from 'classnames';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
@@ -8,10 +8,22 @@ import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
 import { memberSchema } from '@/schemas/member.schema';
+import { Currency, PaymentStatus, ReminderFrequency } from '@/types';
+
+interface MemberFormValues {
+  name: string;
+  phoneNumber: string;
+  amount: number | null;
+  currency: Currency;
+  dueDate: string;
+  paymentStatus: PaymentStatus;
+  reminderFrequency: ReminderFrequency;
+}
 
 export const AddMemberDrawer: React.FC = () => {
   const { createMember, isAddMemberDrawerOpen, closeAddMemberDrawer } = useMembers();
   const isOpen = isAddMemberDrawerOpen;
+  const formikRef = useRef<FormikProps<MemberFormValues> | null>(null);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -19,6 +31,10 @@ export const AddMemberDrawer: React.FC = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      // Reset form when drawer closes
+      if (formikRef.current) {
+        formikRef.current.resetForm();
+      }
     }
     return () => {
       document.body.style.overflow = 'unset';
@@ -28,11 +44,11 @@ export const AddMemberDrawer: React.FC = () => {
   const initialValues = {
     name: '',
     phoneNumber: '',
-    amount: 0,
-    currency: 'NGN',
-    dueDate: '2024-12-31T00:00:00.000Z',
-    paymentStatus: 'pending',
-    reminderFrequency: 'monthly',
+    amount: null as number | null,
+    currency: Currency.NGN,
+    dueDate: '',
+    paymentStatus: PaymentStatus.PENDING,
+    reminderFrequency: ReminderFrequency.MONTHLY,
   };
 
   return (
@@ -78,6 +94,7 @@ export const AddMemberDrawer: React.FC = () => {
           {/* Form */}
           <div className="flex-1 p-6">
             <Formik
+              innerRef={formikRef}
               initialValues={initialValues}
               validationSchema={memberSchema}
               onSubmit={createMember}
@@ -90,6 +107,7 @@ export const AddMemberDrawer: React.FC = () => {
                 errors,
                 touched,
                 isSubmitting,
+                setFieldValue,
               }) => (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Name */}
@@ -158,7 +176,7 @@ export const AddMemberDrawer: React.FC = () => {
                     }
                     value={values.currency}
                     onChange={(value) => {
-                      handleChange({ target: { name: 'currency', value } } as any);
+                      setFieldValue('currency', value);
                     }}
                     onBlur={handleBlur}
                     error={touched.currency ? errors.currency : undefined}
@@ -182,7 +200,7 @@ export const AddMemberDrawer: React.FC = () => {
                     }
                     value={values.dueDate}
                     onChange={(value) => {
-                      handleChange({ target: { name: 'dueDate', value } } as any);
+                      setFieldValue('dueDate', value);
                     }}
                     onBlur={handleBlur}
                     error={touched.dueDate ? errors.dueDate : undefined}
@@ -201,7 +219,7 @@ export const AddMemberDrawer: React.FC = () => {
                     }
                     value={values.paymentStatus}
                     onChange={(value) => {
-                      handleChange({ target: { name: 'paymentStatus', value } } as any);
+                      setFieldValue('paymentStatus', value);
                     }}
                     onBlur={handleBlur}
                     error={touched.paymentStatus ? errors.paymentStatus : undefined}
@@ -225,7 +243,7 @@ export const AddMemberDrawer: React.FC = () => {
                     }
                     value={values.reminderFrequency}
                     onChange={(value) => {
-                      handleChange({ target: { name: 'reminderFrequency', value } } as any);
+                      setFieldValue('reminderFrequency', value);
                     }}
                     onBlur={handleBlur}
                     error={touched.reminderFrequency ? errors.reminderFrequency : undefined}

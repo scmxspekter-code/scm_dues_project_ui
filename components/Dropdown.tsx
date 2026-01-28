@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
 import classNames from 'classnames';
 
 export interface DropdownItem {
@@ -28,7 +27,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   items,
   position,
   placement = 'bottom-left',
-  align = 'left',
+  align: _align = 'left',
   className,
   menuClassName,
   onItemClick,

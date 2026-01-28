@@ -1,5 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { $api } from '@/api';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import Cookie from 'js-cookie';
 
 export interface User {

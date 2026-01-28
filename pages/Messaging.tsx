@@ -1,7 +1,15 @@
-import React from 'react';
-import { Send, Wand2, Clock, History, LayoutTemplate, Smartphone, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Send, Clock, History, LayoutTemplate, Smartphone, Users } from 'lucide-react';
 import { useMessaging } from '../hooks/useMessaging';
 import { CustomSelect } from '../components/CustomSelect';
+import { RecipientType } from '../hooks/useMessaging';
+import {
+  MessageLog,
+  AnnouncementTargetType,
+  AnnouncementType,
+  AnnouncementStatus,
+} from '../types';
+import toast from 'react-hot-toast';
 
 export const Messaging: React.FC = () => {
   const {
@@ -11,33 +19,136 @@ export const Messaging: React.FC = () => {
     setChannel,
     message,
     setMessage,
-    isGenerating,
-    handleAiGenerate,
+    createAnnouncement,
+    getAnnouncements,
+    sendAnnouncement,
+    getMessageLogs,
+    apiState,
   } = useMessaging();
 
+  const [messageHistory, setMessageHistory] = useState<MessageLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [title, setTitle] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async (): Promise<void> => {
+      try {
+        await getAnnouncements({ page: 1, limit: 10 });
+      } catch {
+        // Error already handled in hook
+      }
+
+      // Load message history
+      if (isMounted) {
+        setIsLoadingHistory(true);
+      }
+      try {
+        const data = await getMessageLogs({ page: 1, limit: 10 });
+        if (isMounted) {
+          setMessageHistory(data);
+        }
+      } catch {
+        // Error already handled in hook
+      } finally {
+        if (isMounted) {
+          setIsLoadingHistory(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSend = async (): Promise<void> => {
+    if (!message.trim() || !title.trim()) {
+      toast.error('Please provide both title and message content');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const targetType: AnnouncementTargetType =
+        recipientType === 'all'
+          ? 'all'
+          : recipientType === 'defaulters'
+            ? 'defaulters'
+            : recipientType === 'paid'
+              ? 'paid'
+              : 'custom';
+
+      const announcement = await createAnnouncement({
+        title,
+        content: message,
+        type: 'announcement' as AnnouncementType,
+        targetType,
+        channel: channel === 'whatsapp' ? 'whatsapp' : 'sms',
+        status: 'draft' as AnnouncementStatus,
+      });
+
+      if (announcement) {
+        await sendAnnouncement(announcement.id);
+        setMessage('');
+        setTitle('');
+        // Refresh data after sending
+        try {
+          await getAnnouncements({ page: 1, limit: 10 });
+          const data = await getMessageLogs({ page: 1, limit: 10 });
+          setMessageHistory(data);
+        } catch {
+          // Error already handled in hook
+        }
+      }
+    } catch {
+      // Error already handled in hook
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8">
       {/* Composer Area */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+      <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-4 sm:mb-6 flex items-center">
             <Smartphone className="mr-2 text-cyan-600" size={20} />
             Compose Message
           </h3>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase">
+                Announcement Title
+              </label>
+              <input
+                type="text"
+                placeholder="Enter announcement title..."
+                className="w-full p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 font-medium text-slate-700 text-sm sm:text-base"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <CustomSelect
                   label="Target Audience"
                   labelClassName="text-xs font-bold text-slate-400 uppercase"
                   value={recipientType}
-                  onChange={(value) => setRecipientType(value as any)}
+                  onChange={(value) => setRecipientType(value as RecipientType)}
                   leftIcon={<Users size={16} />}
                   options={[
-                    { value: 'defaulters', label: 'All Defaulters (72)' },
-                    { value: 'paid', label: 'All Paid Members (84)' },
-                    { value: 'all', label: 'Everyone (156)' },
+                    { value: 'defaulters', label: 'All Defaulters' },
+                    { value: 'paid', label: 'All Paid Members' },
+                    { value: 'all', label: 'Everyone' },
                     { value: 'custom', label: 'Specific Member' },
                   ]}
                   size="md"
@@ -51,13 +162,13 @@ export const Messaging: React.FC = () => {
                 <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
                   <button
                     onClick={() => setChannel('whatsapp')}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${channel === 'whatsapp' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+                    className={`flex-1 py-2 px-2 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all ${channel === 'whatsapp' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
                   >
                     WhatsApp
                   </button>
                   <button
                     onClick={() => setChannel('sms')}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${channel === 'sms' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                    className={`flex-1 py-2 px-2 sm:px-4 text-xs sm:text-sm font-bold rounded-lg transition-all ${channel === 'sms' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                   >
                     SMS
                   </button>
@@ -66,48 +177,44 @@ export const Messaging: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-400 uppercase">
-                  Message Content
-                </label>
-                <button
-                  onClick={handleAiGenerate}
-                  disabled={isGenerating}
-                  className="flex items-center space-x-1 text-cyan-600 text-xs font-bold hover:text-cyan-700 transition-colors disabled:opacity-50"
-                >
-                  <Wand2 size={14} className={isGenerating ? 'animate-pulse' : ''} />
-                  <span>{isGenerating ? 'AI Thinking...' : 'Generate with AI'}</span>
-                </button>
-              </div>
+              <label className="text-xs font-bold text-slate-400 uppercase">Message Content</label>
               <textarea
                 rows={6}
                 placeholder="Type your message here... Use [Member Name] for personalization."
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none font-medium text-slate-700"
+                className="w-full p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none font-medium text-slate-700 text-sm sm:text-base"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               ></textarea>
             </div>
 
-            <div className="flex items-center justify-between pt-4">
-              <button className="flex items-center space-x-2 text-slate-400 hover:text-slate-600 transition-colors font-medium">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 pt-4">
+              <button className="flex items-center justify-center sm:justify-start space-x-2 text-slate-400 hover:text-slate-600 transition-colors font-medium text-sm sm:text-base py-2 sm:py-0">
                 <Clock size={18} />
                 <span>Schedule for later</span>
               </button>
-              <button className="flex items-center space-x-2 px-8 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-bold">
+              <button
+                onClick={handleSend}
+                disabled={
+                  isSending || apiState.sendAnnouncement || !message.trim() || !title.trim()
+                }
+                className="flex items-center justify-center space-x-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
                 <Send size={18} />
-                <span>Blast Broadcast</span>
+                <span>
+                  {isSending || apiState.sendAnnouncement ? 'Sending...' : 'Send Announcement'}
+                </span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Templates */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h4 className="font-bold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
+          <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
             <LayoutTemplate className="mr-2 text-cyan-600" size={18} />
             Quick Templates
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <TemplateCard title="Birthday Wish" type="Celebration" />
             <TemplateCard title="Final Dues Warning" type="Urgent" />
             <TemplateCard title="AGM Notification" type="Event" />
@@ -117,35 +224,73 @@ export const Messaging: React.FC = () => {
       </div>
 
       {/* Stats/History Side */}
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h4 className="font-bold text-slate-800 mb-4 flex items-center">
+      <div className="space-y-4 sm:space-y-6">
+        <div className=" flex flex-col bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full max-h-[600px]">
+          <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
             <History className="mr-2 text-cyan-600" size={18} />
             Recent History
           </h4>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0"
-              >
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                  <Smartphone size={16} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-700">Monthly Dues Reminder</p>
-                  <p className="text-xs text-slate-400">Sent to 72 members • 2 hrs ago</p>
-                  <div className="mt-1 flex space-x-2">
-                    <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
-                      Delivered
-                    </span>
+          {isLoadingHistory ? (
+            <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base h-full flex items-center justify-center">
+              Loading message history...
+            </div>
+          ) : (
+            <div className="max-h-[400px] sm:max-h-[500px] lg:max-h-[450px] overflow-y-auto space-y-4 pr-2 h-full ">
+              {messageHistory.length > 0 ? (
+                messageHistory.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                      <Smartphone size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-bold text-slate-700 capitalize truncate">
+                        {log.messageType.replace('_', ' ')}
+                      </p>
+                      <p className="text-xs text-slate-400 break-words">
+                        To {log.recipientName} • {new Date(log.createdAt).toLocaleString()}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ${
+                            log.status === 'delivered'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : log.status === 'failed'
+                                ? 'bg-red-50 text-red-600'
+                                : 'bg-amber-50 text-amber-600'
+                          }`}
+                        >
+                          {log.status}
+                        </span>
+                        <span className="text-[10px] text-slate-400 capitalize">{log.channel}</span>
+                      </div>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                  No message history yet
                 </div>
-              </div>
-            ))}
-          </div>
-          <button className="w-full mt-6 py-2 text-sm font-bold text-cyan-600 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors">
-            View All Logs
+              )}
+            </div>
+          )}
+          <button
+            onClick={async () => {
+              setIsLoadingHistory(true);
+              try {
+                const data = await getMessageLogs({ page: 1, limit: 10 });
+                setMessageHistory(data);
+              } catch {
+                // Error already handled in hook
+              } finally {
+                setIsLoadingHistory(false);
+              }
+            }}
+            className="w-full mt-4 sm:mt-6 py-2 text-xs sm:text-sm font-bold text-cyan-600 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors mt-auto"
+          >
+            Refresh History
           </button>
         </div>
       </div>
@@ -154,11 +299,11 @@ export const Messaging: React.FC = () => {
 };
 
 const TemplateCard = ({ title, type }: { title: string; type: string }) => (
-  <div className="p-4 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all cursor-pointer group">
+  <div className="p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all cursor-pointer group">
     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
       {type}
     </div>
-    <div className="font-bold text-slate-700 group-hover:text-cyan-600 transition-colors">
+    <div className="font-bold text-sm sm:text-base text-slate-700 group-hover:text-cyan-600 transition-colors">
       {title}
     </div>
   </div>

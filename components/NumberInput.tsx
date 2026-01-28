@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes, ReactNode, useState, ChangeEvent } from 'react';
+import React, { InputHTMLAttributes, ReactNode, ChangeEvent } from 'react';
 import classNames from 'classnames';
 
 export interface NumberInputProps extends Omit<

@@ -1,57 +1,68 @@
+// Error Types
+export interface ApiError {
+  message: string;
+  status: number;
+  error?: string;
+}
+
+// Type Guards
+export function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as ApiError).message === 'string' &&
+    'status' in error &&
+    typeof (error as ApiError).status === 'number'
+  );
+}
+
+// Message Types
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'failed';
 
 export type MessageChannel = 'whatsapp' | 'sms' | 'email';
 
-export type MessageType = 'dues_reminder';
+export type MessageType = 'dues_reminder' | 'announcement' | 'birthday' | 'anniversary';
 
-export interface ReminderHistory {
-  id: string;
-  date: string;
-  content: string;
-  status: 'Delivered' | 'Failed';
-  type: 'WhatsApp' | 'SMS';
+// Announcement Types
+export type AnnouncementType = 'announcement' | 'notice' | 'custom';
+
+export type AnnouncementTargetType = 'all' | 'defaulters' | 'paid' | 'custom';
+
+export type AnnouncementStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+
+export type AnnouncementChannel = 'sms' | 'whatsapp';
+
+// Enums
+export enum Currency {
+  NGN = 'NGN',
 }
 
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: PaymentStatus;
-  lastPaymentDate?: string;
-  amountDue: number;
-  joinedDate: string;
-  reminderHistory?: ReminderHistory[];
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
 }
 
-export interface PaymentRecord {
-  id: string;
-  memberId: string;
-  memberName: string;
-  amount: number;
-  date: string;
-  reference: string;
-  channel: 'WhatsApp' | 'Bank Transfer' | 'Portal';
+export enum ReminderFrequency {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
 }
 
-export interface MessageLog {
-  id: string;
-  recipient: string;
-  type: MessageChannel;
-  collectionId: string;
-  messageType: MessageType;
-  channel: MessageChannel;
-  recipientPhone: string;
-  recipientName: string;
-  content: string;
-  status: MessageStatus;
-  externalId: string | null;
-  errorMessage: string | null;
-  sentAt: string | null;
-  deliveredAt: string | null;
-  collection: Member;
+export enum PaymentProvider {
+  PAYSTACK = 'paystack',
+  FLUTTERWAVE = 'flutterwave',
 }
 
+export enum PaymentLinkStatus {
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  DISABLED = 'disabled',
+}
+
+// Base Types
 export interface PaginationMeta {
   total: number;
   perPage: number;
@@ -87,34 +98,7 @@ export interface User {
   email: string;
 }
 
-export enum Currency {
-  NGN = 'NGN',
-}
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  FAILED = 'failed',
-}
-
-export enum ReminderFrequency {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
-  YEARLY = 'yearly',
-}
-
-export enum PaymentProvider {
-  PAYSTACK = 'paystack',
-  FLUTTERWAVE = 'flutterwave',
-}
-
-export enum PaymentLinkStatus {
-  ACTIVE = 'active',
-  EXPIRED = 'expired',
-  DISABLED = 'disabled',
-}
-
+// Payment Link Types
 export interface PaymentLink {
   id: string;
   collectionId: string;
@@ -129,6 +113,7 @@ export interface PaymentLink {
   updatedAt: string;
 }
 
+// Member/Collection Types
 export interface Member {
   id: string;
   name: string;
@@ -146,14 +131,76 @@ export interface Member {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  paymentLink: PaymentLink;
+  paymentLink?: PaymentLink;
+  [key: string]: unknown;
 }
 
-export interface DashboardStats {
-  collections: CollectionsStats;
-  recentPayments: [];
-  recentReminders: [];
-  messageDeliveryRates: MessageDeliveryStats;
+// Message Log Types
+export interface MessageLog {
+  id: string;
+  collectionId: string;
+  messageType: MessageType;
+  channel: MessageChannel;
+  recipientPhone: string;
+  recipientName: string;
+  content: string;
+  status: MessageStatus;
+  externalId: string | null;
+  errorMessage: string | null;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  collection?: Member;
+}
+
+// Payment Record Types
+export interface PaymentRecord {
+  id: string;
+  collectionId: string;
+  paymentLinkId: string;
+  provider: PaymentProvider;
+  providerReference: string;
+  providerEventId: string | null;
+  amount: number;
+  currency: Currency;
+  payerEmail: string;
+  payerName: string;
+  paymentMethod: string;
+  paymentDate: string;
+  status: 'successful' | 'failed' | 'pending';
+  fee: number;
+  rawWebhookData: Record<string, unknown>;
+  createdAt: string;
+}
+
+// Collection History Types
+export type CollectionHistoryItemType =
+  | 'collection_created'
+  | 'collection_updated'
+  | 'message'
+  | 'payment';
+
+export interface CollectionHistoryItem {
+  type: CollectionHistoryItemType;
+  timestamp: string;
+  data: Member | MessageLog | PaymentRecord | Record<string, unknown>;
+}
+
+export interface CollectionHistory {
+  collection: Member;
+  timeline: CollectionHistoryItem[];
+}
+
+// Stats Types
+export interface DefaultersStats {
+  total: number;
+  totalAmount: number;
+  byStatus: {
+    pending: number;
+    failed: number;
+  };
+  averageDaysOverdue: number;
 }
 
 export interface CollectionsStats {
@@ -174,6 +221,40 @@ export interface MessageDeliveryStats {
   total: number;
 }
 
+export interface DashboardStats {
+  collections: CollectionsStats;
+  recentPayments: PaymentRecord[];
+  recentReminders: MessageLog[];
+  messageDeliveryRates: MessageDeliveryStats;
+}
+
+// Announcement Types
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  scheduledFor: string | null;
+  sentAt: string | null;
+  targetType: AnnouncementTargetType;
+  targetCollectionIds: string[] | null;
+  channel: AnnouncementChannel;
+  status: AnnouncementStatus;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+// Bulk Message Response
+export interface BulkMessageResponse {
+  total: number;
+  sent: number;
+  failed: number;
+  messageLogs: MessageLog[];
+}
+
+// Payload Types
 export interface ICreateMemberPayload {
   name: string;
   phoneNumber: string;
@@ -182,4 +263,105 @@ export interface ICreateMemberPayload {
   dueDate: string;
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
+}
+
+export interface UpdateMemberPayload {
+  name?: string;
+  phoneNumber?: string;
+  amount?: number;
+  currency?: Currency;
+  dueDate?: string;
+  paymentStatus?: PaymentStatus;
+  reminderFrequency?: ReminderFrequency;
+  dob?: string | null;
+  anniversary?: string | null;
+}
+
+export interface CreateAnnouncementPayload {
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  scheduledFor?: string | null;
+  targetType: AnnouncementTargetType;
+  targetCollectionIds?: string[] | null;
+  channel: AnnouncementChannel;
+  status?: AnnouncementStatus;
+}
+
+export interface UpdateAnnouncementPayload {
+  title?: string;
+  content?: string;
+  type?: AnnouncementType;
+  scheduledFor?: string | null;
+  targetType?: AnnouncementTargetType;
+  targetCollectionIds?: string[] | null;
+  channel?: AnnouncementChannel;
+  status?: AnnouncementStatus;
+}
+
+export interface CreatePaymentLinksBulkPayload {
+  collectionIds: string[];
+}
+
+export interface TriggerBirthdayPayload {
+  collectionId: string;
+}
+
+export interface TriggerAnniversaryPayload {
+  collectionId: string;
+}
+
+// Message Log Params
+export interface MessageLogParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  collectionId?: string;
+  channel?: MessageChannel;
+  status?: MessageStatus;
+  messageType?: MessageType;
+}
+
+// Export Params
+export interface ExportParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+// Report Params
+export interface PaymentsReportParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: 'successful' | 'failed' | 'pending';
+}
+
+export interface RemindersReportParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  channel?: MessageChannel;
+  status?: MessageStatus;
+}
+
+export interface MessagesReportParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  channel?: MessageChannel;
+  messageType?: MessageType;
+}
+
+export interface DefaultersReportParams extends IApiParams {
+  sortBy?: 'amount' | 'createdAt' | 'name';
+  sortOrder?: 'asc' | 'desc';
 }

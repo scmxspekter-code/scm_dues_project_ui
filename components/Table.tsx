@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import classNames from 'classnames';
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T extends Record<string, unknown> = Record<string, unknown>> {
   header: string | ReactNode;
   accessor?: keyof T | ((row: T) => ReactNode);
   className?: string;
@@ -10,7 +10,7 @@ export interface TableColumn<T = any> {
   align?: 'left' | 'center' | 'right';
 }
 
-export interface TableProps<T = any> {
+export interface TableProps<T extends Record<string, unknown> = Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
   isLoading?: boolean;
@@ -25,7 +25,7 @@ export interface TableProps<T = any> {
   keyExtractor?: (row: T, index: number) => string | number;
 }
 
-export const Table = <T extends Record<string, any>>({
+export const Table = <T extends Record<string, unknown> = Record<string, unknown>>({
   columns,
   data,
   isLoading = false,
@@ -37,9 +37,9 @@ export const Table = <T extends Record<string, any>>({
   containerClassName,
   headerClassName,
   bodyClassName,
-  keyExtractor = (row: T, index: number) => (row.id || row._id || index) as string | number,
+  keyExtractor = (row: T, _index: number) => (row.id || row._id || _index) as string | number,
 }: TableProps<T>) => {
-  const renderCellContent = (column: TableColumn<T>, row: T, index: number): ReactNode => {
+  const renderCellContent = (column: TableColumn<T>, row: T, _index: number): ReactNode => {
     if (typeof column.accessor === 'function') {
       return column.accessor(row);
     }
@@ -49,7 +49,7 @@ export const Table = <T extends Record<string, any>>({
     return null;
   };
 
-  const getRowClassName = (row: T, index: number): string => {
+  const getRowClassName = (row: T, _index: number): string => {
     const baseClasses = 'hover:bg-slate-50/50 transition-colors group';
     const customClasses =
       typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';

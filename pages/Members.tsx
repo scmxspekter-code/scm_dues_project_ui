@@ -1,9 +1,9 @@
 import React from 'react';
-import { Search, Filter, Plus, Mail, Phone, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Search, Filter, Plus, Phone, MoreVertical } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { AddMemberDrawer } from '../components/AddMemberDrawer';
 import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
-import { Member } from '../types';
+import { Member, PaymentStatus } from '../types';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
 import { Pagination } from '../components/Pagination';
@@ -21,6 +21,9 @@ export const Members: React.FC = () => {
     handleItemsPerPageChange,
     apiState,
     setSelectedMember,
+    deleteMember,
+    markAsPaid,
+    setStatusFilter,
   } = useMembers();
   return (
     <>
@@ -48,11 +51,10 @@ export const Members: React.FC = () => {
                 </button>
               }
               items={[
-                { label: 'All Members', onClick: () => console.log('All') },
-                { label: 'Paid Only', onClick: () => console.log('Paid') },
-                { label: 'Pending', onClick: () => console.log('Pending') },
-                { divider: true },
-                { label: 'Defaulters', onClick: () => console.log('Defaulters') },
+                { label: 'All Members', onClick: () => setStatusFilter(undefined) },
+                { label: 'Paid Only', onClick: () => setStatusFilter(PaymentStatus.PAID) },
+                { label: 'Pending', onClick: () => setStatusFilter(PaymentStatus.PENDING) },
+                { label: 'Failed', onClick: () => setStatusFilter(PaymentStatus.FAILED) },
               ]}
               placement="bottom-right"
             />
@@ -77,7 +79,9 @@ export const Members: React.FC = () => {
                       {member.name.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-slate-800 whitespace-nowrap">{member.name}</div>
+                      <div className="font-bold text-slate-800 whitespace-nowrap">
+                        {member.name}
+                      </div>
                       <div className="text-xs text-slate-400 italic">
                         Joined {formatDate(new Date(member.createdAt), 'dd MM yyyy')}
                       </div>
@@ -111,17 +115,16 @@ export const Members: React.FC = () => {
               },
               {
                 header: 'Contact',
-                accessor: () => (
+                accessor: (member) => (
                   <div className="flex items-center space-x-2">
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors">
-                      <Mail size={16} />
-                    </button>
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors">
+                    <a
+                      href={`tel:${member.phoneNumber}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
+                      title={`Call ${member.phoneNumber}`}
+                    >
                       <Phone size={16} />
-                    </button>
-                    <button className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors">
-                      <WhatsApp size={16} />
-                    </button>
+                    </a>
                   </div>
                 ),
               },
@@ -129,15 +132,49 @@ export const Members: React.FC = () => {
                 header: 'Actions',
                 align: 'right',
                 accessor: (member) => (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedMember(member);
-                    }}
-                    className="text-cyan-600 font-bold text-sm hover:underline whitespace-nowrap"
-                  >
-                    View Profile
-                  </button>
+                  <div className="flex items-center justify-end space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMember(member);
+                      }}
+                      className="text-cyan-600 font-bold text-sm hover:underline whitespace-nowrap"
+                    >
+                      View Profile
+                    </button>
+                    <Dropdown
+                      trigger={
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      }
+                      items={[
+                        {
+                          label: 'Edit Member',
+                          onClick: () => {
+                            // TODO: Open edit modal
+                            // Edit member functionality to be implemented
+                            void member;
+                          },
+                        },
+                        {
+                          label: 'Mark as Paid',
+                          onClick: () => markAsPaid(member.id),
+                          disabled: member.paymentStatus === PaymentStatus.PAID,
+                        },
+                        { divider: true },
+                        {
+                          label: 'Delete',
+                          onClick: () => deleteMember(member.id, member.name),
+                          className: 'text-red-600',
+                        },
+                      ]}
+                      placement="bottom-right"
+                    />
+                  </div>
                 ),
               },
             ]}
@@ -175,20 +212,3 @@ export const Members: React.FC = () => {
     </>
   );
 };
-
-// Internal icon shim
-const WhatsApp = ({ size, className }: { size?: number; className?: string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-  </svg>
-);

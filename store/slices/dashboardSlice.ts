@@ -1,6 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { analyzeDefaulterTrends } from '@/services/geminiService';
-import { CollectionsStats, DashboardStats } from '@/types';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { DashboardStats } from '@/types';
 import { getPercentage } from '@/utils';
 
 export interface ChartData {
@@ -15,7 +14,6 @@ export interface PieData {
 
 interface DashboardState {
   stats: DashboardStats;
-  aiAnalysis: string;
   chartData: ChartData[];
   pieData: PieData[];
 }
@@ -41,31 +39,13 @@ const initialState: DashboardState = {
       total: 0,
     },
   },
-  aiAnalysis: 'Analyzing current trends...',
-  chartData: [
-    { name: 'Jan', amount: 450000 },
-    { name: 'Feb', amount: 300000 },
-    { name: 'Mar', amount: 600000 },
-    { name: 'Apr', amount: 200000 },
-  ],
+  chartData: [],
   pieData: [
     { name: 'Paid', value: 0 },
     { name: 'Defaulters', value: 0 },
     { name: 'Pending', value: 0 },
   ],
 };
-
-export const fetchAIAnalysis = createAsyncThunk(
-  'dashboard/fetchAIAnalysis',
-  async (_, { rejectWithValue }) => {
-    try {
-      const analysis = await analyzeDefaulterTrends(12, 120);
-      return analysis;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch AI analysis');
-    }
-  }
-);
 
 const dashboardSlice = createSlice({
   name: 'dashboard',

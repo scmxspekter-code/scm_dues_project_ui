@@ -20,9 +20,8 @@ export const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     // If authenticated with token but no user data, fetch user
     if (isAuthenticated && token && !user) {
-      me().catch((error) => {
+      me().catch(() => {
         // If fetching user fails, token might be invalid
-        console.error('Failed to fetch user:', error);
         dispatch(logout());
       });
     }

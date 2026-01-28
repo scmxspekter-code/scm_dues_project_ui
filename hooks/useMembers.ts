@@ -1,14 +1,24 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { IApiParams, Member, PaymentStatus, PaginationMeta } from '../types';
+import {
+  IApiParams,
+  Member,
+  PaymentStatus,
+  PaginationMeta,
+  ICreateMemberPayload,
+  UpdateMemberPayload,
+  PaymentLink,
+  MessageLog,
+  CollectionHistory,
+  isApiError,
+} from '@/types';
 import { $api } from '@/api';
-import { ICreateMemberPayload } from '@/api/member.repository';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  addMember,
   setMembers,
   toggleAddMember,
   setSelectedMember as setSelectedMemberAction,
   toggleMemberDrawer,
+  updateMember as updateMemberAction,
 } from '@/store/slices/membersSlice';
 import { toast } from 'react-hot-toast';
 import { debounce } from '@/utils/debounce';
@@ -26,11 +36,14 @@ export const useMembers = () => {
     createMember: false,
     updateMember: false,
     deleteMember: false,
-    getMember: false,
-    getMemberHistory: false,
-    getMemberPayments: false,
-    getMemberReminders: false,
-    getMemberSettings: false,
+    sendReminder: false,
+    getReminderHistory: false,
+    getCollectionHistory: false,
+    getPaymentLink: false,
+    createPaymentLink: false,
+    markAsPaid: false,
+    getBirthdays: false,
+    getAnniversaries: false,
   });
   const toggleAddMemberDrawerHandler = () => {
     dispatch(toggleAddMember());
@@ -49,43 +62,24 @@ export const useMembers = () => {
     setCurrentPage(1); // Reset to first page when changing items per page
   };
 
-  // Debounce search term using useRef to persist the debounced function
-  const debouncedSetSearchRef = useRef(
-    debounce((value: string) => {
-      setDebouncedSearchTerm(value);
-      setCurrentPage(1); // Reset to page 1 when search term changes
-    }, 500)
-  );
+  const [statusFilter, setStatusFilter] = useState<PaymentStatus | undefined>(undefined);
 
-  // Update debounced search term when searchTerm changes
-  useEffect(() => {
-    debouncedSetSearchRef.current(searchTerm);
-  }, [searchTerm]);
-  useEffect(() => {
-    getMembers({
-      page: currentPage,
-      limit: itemsPerPage,
-      search: debouncedSearchTerm || undefined,
-    });
-  }, [currentPage, itemsPerPage, debouncedSearchTerm]);
+  // Memoize getMembers to prevent unnecessary recreations
   const getMembers = useCallback(
     async (params: IApiParams) => {
       try {
         setApiState((prev) => ({ ...prev, getMembers: true }));
         const response = await $api.members.getMembers(params);
         dispatch(setMembers(response.data!));
-        // Set pagination meta if available
         if (response.meta) {
           setPaginationMeta(response.meta);
-          // Don't sync currentPage and itemsPerPage from API response to avoid infinite loops
-          // The local state should be the source of truth
         }
-        // Remove toast for pagination changes to avoid spam
-        if ((!params.page || params.page === 1) && !params.search) {
-          toast.success('Members fetched successfully');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          toast.error(error.message || 'Failed to fetch members');
+        } else {
+          toast.error('Failed to fetch members');
         }
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to fetch members');
         throw error;
       } finally {
         setApiState((prev) => ({ ...prev, getMembers: false }));
@@ -94,34 +88,312 @@ export const useMembers = () => {
     [dispatch]
   );
 
-  const createMember = async (payload: ICreateMemberPayload) => {
+  // Track previous params to prevent duplicate calls
+  const prevParamsRef = useRef<IApiParams | null>(null);
+  const isMountedRef = useRef(false);
+
+  // Debounce search term efficiently using useRef to persist debounced function
+  const debouncedSetSearchRef = useRef(
+    debounce((value: string) => {
+      setDebouncedSearchTerm(value);
+      setCurrentPage(1);
+    }, 500)
+  );
+
+  // Update debounced search term when searchTerm changes (skip on initial mount)
+  useEffect(() => {
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      return;
+    }
+    debouncedSetSearchRef.current(searchTerm);
+  }, [searchTerm]);
+
+  // Memoize params to prevent unnecessary API calls
+  const params = useMemo<IApiParams>(
+    () => ({
+      page: currentPage,
+      limit: itemsPerPage,
+      search: debouncedSearchTerm || undefined,
+      status: statusFilter,
+    }),
+    [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter]
+  );
+
+  // Fetch members - only when params actually change
+  useEffect(() => {
+    // Compare params object properties directly instead of JSON.stringify
+    const prevParams = prevParamsRef.current;
+    if (
+      prevParams &&
+      prevParams.page === params.page &&
+      prevParams.limit === params.limit &&
+      prevParams.search === params.search &&
+      prevParams.status === params.status
+    ) {
+      return;
+    }
+
+    // Update ref and call getMembers
+    prevParamsRef.current = { ...params };
+    getMembers(params);
+  }, [params, getMembers]);
+
+  const createMember = async (payload: ICreateMemberPayload): Promise<void> => {
     try {
-      const { data } = await $api.members.createMember([payload]);
+      setApiState((prev) => ({ ...prev, createMember: true }));
+      const newPayload = { ...payload, phoneNumber: payload.phoneNumber.replace(/^0/, '+234') };
+      await $api.members.createMember([newPayload]);
       dispatch(toggleAddMember());
-      dispatch(addMember(data!));
-    } catch (error: any) {
+
+      const refreshParams: IApiParams = {
+        page: 1,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        status: statusFilter,
+      };
+
+      // Update prevParamsRef to prevent useEffect from triggering again
+      prevParamsRef.current = { ...refreshParams };
+      setCurrentPage(1);
+      await getMembers(refreshParams);
+
+      toast.success('Member created successfully');
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to create member');
+      } else {
+        toast.error('Failed to create member');
+      }
       throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, createMember: false }));
     }
   };
 
-  // Fetch members when page, items per page, or debounced search term changes
+  const updateMember = async (id: string, payload: UpdateMemberPayload): Promise<void> => {
+    try {
+      setApiState((prev) => ({ ...prev, updateMember: true }));
+      const { data } = await $api.members.updateMember(id, payload);
+      if (data && data.length > 0) {
+        dispatch(updateMemberAction(data[0]));
+        toast.success('Member updated successfully');
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to update member');
+      } else {
+        toast.error('Failed to update member');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, updateMember: false }));
+    }
+  };
 
-  const setSelectedMember = (member: Member | null) => {
+  const deleteMember = async (id: string, memberName?: string): Promise<void> => {
+    // Show confirmation dialog
+    if (!window.confirm(`Are you sure you want to delete ${memberName || 'this member'}?`)) {
+      return;
+    }
+
+    try {
+      setApiState((prev) => ({ ...prev, deleteMember: true }));
+      await $api.members.deleteMember(id);
+      await getMembers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        status: statusFilter,
+      });
+      toast.success('Member deleted successfully');
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to delete member');
+      } else {
+        toast.error('Failed to delete member');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, deleteMember: false }));
+    }
+  };
+
+  const sendReminder = async (
+    id: string,
+    channel: 'sms' | 'whatsapp'
+  ): Promise<MessageLog | undefined> => {
+    try {
+      setApiState((prev) => ({ ...prev, sendReminder: true }));
+      const { data } = await $api.members.sendReminder(id, channel);
+      toast.success('Reminder sent successfully');
+      return data;
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to send reminder');
+      } else {
+        toast.error('Failed to send reminder');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, sendReminder: false }));
+    }
+  };
+
+  const getReminderHistory = useCallback(
+    async (id: string, params: IApiParams): Promise<MessageLog[]> => {
+      try {
+        setApiState((prev) => ({ ...prev, getReminderHistory: true }));
+        const { data } = await $api.members.getReminderHistory(id, params);
+        return data || [];
+      } catch (error: unknown) {
+        if (isApiError(error)) {
+          toast.error(error.message || 'Failed to fetch reminder history');
+        } else {
+          toast.error('Failed to fetch reminder history');
+        }
+        throw error;
+      } finally {
+        setApiState((prev) => ({ ...prev, getReminderHistory: false }));
+      }
+    },
+    []
+  );
+
+  const getCollectionHistory = async (id: string): Promise<CollectionHistory | undefined> => {
+    try {
+      setApiState((prev) => ({ ...prev, getCollectionHistory: true }));
+      const { data } = await $api.members.getCollectionHistory(id);
+      return data;
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch collection history');
+      } else {
+        toast.error('Failed to fetch collection history');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getCollectionHistory: false }));
+    }
+  };
+
+  const getPaymentLink = async (id: string): Promise<PaymentLink | undefined> => {
+    try {
+      setApiState((prev) => ({ ...prev, getPaymentLink: true }));
+      const { data } = await $api.members.getPaymentLink(id);
+      return data;
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch payment link');
+      } else {
+        toast.error('Failed to fetch payment link');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getPaymentLink: false }));
+    }
+  };
+
+  const createPaymentLink = async (id: string): Promise<PaymentLink | undefined> => {
+    try {
+      setApiState((prev) => ({ ...prev, createPaymentLink: true }));
+      const { data } = await $api.members.createPaymentLink(id);
+      toast.success('Payment link created successfully');
+      return data;
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to create payment link');
+      } else {
+        toast.error('Failed to create payment link');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, createPaymentLink: false }));
+    }
+  };
+
+  const markAsPaid = async (id: string): Promise<void> => {
+    try {
+      setApiState((prev) => ({ ...prev, markAsPaid: true }));
+      const { data } = await $api.members.markAsPaid(id);
+      if (data) {
+        dispatch(updateMemberAction(data));
+        toast.success('Member marked as paid');
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to mark as paid');
+      } else {
+        toast.error('Failed to mark as paid');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, markAsPaid: false }));
+    }
+  };
+
+  const getBirthdays = async (): Promise<Member[]> => {
+    try {
+      setApiState((prev) => ({ ...prev, getBirthdays: true }));
+      const { data } = await $api.members.getBirthdays();
+      return data || [];
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch birthdays');
+      } else {
+        toast.error('Failed to fetch birthdays');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getBirthdays: false }));
+    }
+  };
+
+  const getAnniversaries = async (): Promise<Member[]> => {
+    try {
+      setApiState((prev) => ({ ...prev, getAnniversaries: true }));
+      const { data } = await $api.members.getAnniversaries();
+      return data || [];
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch anniversaries');
+      } else {
+        toast.error('Failed to fetch anniversaries');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getAnniversaries: false }));
+    }
+  };
+
+  const setSelectedMember = (member: Member | null): void => {
     dispatch(setSelectedMemberAction(member));
   };
 
-  const toggleMemberDrawerHandler = () => {
+  const toggleMemberDrawerHandler = (): void => {
     dispatch(toggleMemberDrawer());
   };
 
   return {
     createMember,
+    updateMember,
+    deleteMember,
+    sendReminder,
+    getReminderHistory,
+    getCollectionHistory,
+    getPaymentLink,
+    createPaymentLink,
+    markAsPaid,
+    getBirthdays,
+    getAnniversaries,
     toggleAddMemberDrawer: toggleAddMemberDrawerHandler,
     closeAddMemberDrawer: closeAddMemberDrawerHandler,
     isAddMemberDrawerOpen,
     members,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
     currentPage,
     itemsPerPage,
     paginationMeta,

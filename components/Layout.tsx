@@ -12,7 +12,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import classNames from 'classnames';
 
@@ -21,9 +21,11 @@ const SidebarItem: React.FC<{
   icon: React.ReactNode;
   label: string;
   active: boolean;
-}> = ({ to, icon, label, active }) => (
+  onClick?: () => void;
+}> = ({ to, icon, label, active, onClick }) => (
   <Link
     to={to}
+    onClick={onClick}
     className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
       active
         ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-200'
@@ -39,7 +41,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isOpen, setIsOpen] = React.useState(false);
   const location = useLocation();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+
+  // Close mobile menu when route changes
+  React.useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const menuItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
@@ -53,14 +59,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="min-h-screen flex bg-slate-50">
       {/* Mobile Menu Button */}
-  
-{/* {overlay} */}
-{isOpen && (
-<div onClick={() => setIsOpen(prev=>!prev)} className={classNames("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out",{
-  'opacity-100':isOpen,
 
-})}></div>
-)}
+      {/* {overlay} */}
+      {isOpen && (
+        <div
+          onClick={() => setIsOpen((prev) => !prev)}
+          className={classNames(
+            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out',
+            {
+              'opacity-100': isOpen,
+            }
+          )}
+        ></div>
+      )}
       {/* Sidebar */}
       <aside
         className={`
@@ -71,19 +82,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       >
         <div className="h-full flex flex-col px-2 md:px-6 py-8">
           <div className="flex items-center justify-between  mb-12">
-
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">S</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">S</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-xl tracking-tight text-slate-800">Sperktar</h1>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
+                  SCM Admin
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-xl tracking-tight text-slate-800">Sperktar</h1>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
-                SCM Admin
-              </p>
-            </div>
-          </div>
-          <button onClick={() => setIsOpen(prev=>!prev)} className="p-2 t relative lg:hidden"><X className="ext-slate-800 hover:text-cyan-500 transition-colors" strokeWidth={3} size={20} /></button>
+            <button onClick={() => setIsOpen((prev) => !prev)} className="p-2 t relative lg:hidden">
+              <X
+                className="ext-slate-800 hover:text-cyan-500 transition-colors"
+                strokeWidth={3}
+                size={20}
+              />
+            </button>
           </div>
 
           <nav className="flex-1 space-y-2">
@@ -94,6 +110,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 icon={item.icon}
                 label={item.label}
                 active={location.pathname === item.to}
+                onClick={() => setIsOpen(false)}
               />
             ))}
           </nav>
@@ -117,7 +134,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {menuItems.find((i) => i.to === location.pathname)?.label || 'Overview'}
           </h2>
           <div className="flex items-center space-x-4">
-         
             <button className="p-2 text-slate-400 hover:text-cyan-500 transition-colors relative">
               <Bell size={22} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -126,11 +142,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <img src="https://picsum.photos/seed/admin/100" alt="Admin" />
             </div>
             <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden  bg-cyan-600 text-white p-2 rounded-full shadow-2xl"
-      >
-      <Menu />
-      </button>
+              onClick={() => setIsOpen(!isOpen)}
+              className="lg:hidden  bg-cyan-600 text-white p-2 rounded-full shadow-2xl"
+            >
+              <Menu />
+            </button>
           </div>
         </header>
 

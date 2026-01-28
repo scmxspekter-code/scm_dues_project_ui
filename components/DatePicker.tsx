@@ -76,7 +76,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const hasError = touched && !!error;
   const hasLeftIcon = !!leftIcon || true; // Always show calendar icon if no leftIcon provided
 
-  const selectedDate = value ? new Date(value) : null;
+  const selectedDate = React.useMemo(() => (value ? new Date(value) : null), [value]);
   const displayIcon = leftIcon || <Calendar size={18} />;
 
   // Get calendar days for current month
@@ -109,7 +109,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     }
 
     // Current month's days
-    const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       days.push({
@@ -235,7 +234,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (value && selectedDate) {
       setCurrentMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
     }
-  }, [value]);
+  }, [value, selectedDate]);
 
   const calendarDays = getCalendarDays();
 
