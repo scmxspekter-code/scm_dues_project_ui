@@ -9,6 +9,7 @@ import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
 import { memberSchema } from '@/schemas/member.schema';
 import { Currency, PaymentStatus, ReminderFrequency } from '@/types';
+import { useAppSelector } from '@/store/hooks';
 
 interface MemberFormValues {
   name: string;
@@ -20,9 +21,15 @@ interface MemberFormValues {
   reminderFrequency: ReminderFrequency;
 }
 
-export const AddMemberDrawer: React.FC = () => {
-  const { createMember, isAddMemberDrawerOpen, closeAddMemberDrawer } = useMembers();
-  const isOpen = isAddMemberDrawerOpen;
+interface EditMemberDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({ isOpen, onClose }) => {
+  const { member } = useAppSelector((state) => state.members);
+  const { updateMember, apiState } = useMembers();
+  const formikRef = useRef<FormikProps<MemberFormValues> | null>(null);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -30,20 +37,44 @@ export const AddMemberDrawer: React.FC = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      // if (formikRef.current) {
+      //   formikRef.current.resetForm();
+      // }
     }
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
-  const initialValues = {
-    name: '',
-    phoneNumber: '',
-    amount: 0,
-    currency: Currency.NGN,
-    dueDate: '',
-    paymentStatus: PaymentStatus.PENDING,
-    reminderFrequency: ReminderFrequency.MONTHLY,
+  if (!member) return null;
+
+  const initialValues: MemberFormValues = {
+    name: member.name || '',
+    phoneNumber: member.phoneNumber || '',
+    amount: member.amount || 0,
+    currency: member.currency || Currency.NGN,
+    dueDate: member.dueDate || '',
+    paymentStatus: member.paymentStatus || PaymentStatus.PENDING,
+    reminderFrequency: member.reminderFrequency || ReminderFrequency.MONTHLY,
+  };
+
+  const handleSubmit = async (values: MemberFormValues): Promise<void> => {
+    if (!member.id) return;
+
+    try {
+      await updateMember(member.id, {
+        name: values.name,
+        phoneNumber: values.phoneNumber,
+        amount: values.amount || 0,
+        currency: values.currency,
+        dueDate: values.dueDate,
+        paymentStatus: values.paymentStatus,
+        reminderFrequency: values.reminderFrequency,
+      });
+      onClose();
+    } catch {
+      // Error already handled in hook
+    }
   };
 
   return (
@@ -54,10 +85,10 @@ export const AddMemberDrawer: React.FC = () => {
           className={classNames(
             'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity',
             {
-              'opacity-100 ': isOpen,
+              'opacity-100': isOpen,
             }
           )}
-          onClick={closeAddMemberDrawer}
+          onClick={onClose}
         />
       )}
 
@@ -75,11 +106,11 @@ export const AddMemberDrawer: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Add New Member</h2>
-              <p className="text-sm text-slate-500 mt-1">Fill in the member details below</p>
+              <h2 className="text-xl font-bold text-slate-800">Edit Member</h2>
+              <p className="text-sm text-slate-500 mt-1">Update member details below</p>
             </div>
             <button
-              onClick={closeAddMemberDrawer}
+              onClick={onClose}
               className="p-2 rounded-lg hover:bg-slate-200 transition-colors text-slate-500 hover:text-slate-700"
             >
               <X size={20} />
@@ -89,9 +120,11 @@ export const AddMemberDrawer: React.FC = () => {
           {/* Form */}
           <div className="flex-1 p-6">
             <Formik
+              innerRef={formikRef}
               initialValues={initialValues}
               validationSchema={memberSchema}
-              onSubmit={createMember}
+              onSubmit={handleSubmit}
+              enableReinitialize={true}
             >
               {({
                 values,
@@ -253,17 +286,17 @@ export const AddMemberDrawer: React.FC = () => {
                   <div className="pt-4 border-t border-slate-200 flex space-x-3">
                     <button
                       type="button"
-                      onClick={closeAddMemberDrawer}
+                      onClick={onClose}
                       className="flex-1 px-6 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || apiState.updateMember}
                       className="flex-1 px-6 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? 'Adding...' : 'Add Member'}
+                      {isSubmitting || apiState.updateMember ? 'Updating...' : 'Update Member'}
                     </button>
                   </div>
                 </form>

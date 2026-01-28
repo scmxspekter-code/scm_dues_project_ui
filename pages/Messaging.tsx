@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Send, Clock, History, LayoutTemplate, Smartphone, Users } from 'lucide-react';
+import React from 'react';
+import { Send, Clock, History, LayoutTemplate, Smartphone, Users, Eye, Trash2 } from 'lucide-react';
 import { useMessaging } from '../hooks/useMessaging';
 import { CustomSelect } from '../components/CustomSelect';
 import { RecipientType } from '../hooks/useMessaging';
-import { MessageLog, AnnouncementTargetType, AnnouncementType, AnnouncementStatus } from '../types';
-import toast from 'react-hot-toast';
+import classNames from 'classnames';
+import { formatDate } from 'date-fns';
 
 export const Messaging: React.FC = () => {
   const {
@@ -14,99 +14,22 @@ export const Messaging: React.FC = () => {
     setChannel,
     message,
     setMessage,
-    createAnnouncement,
-    getAnnouncements,
+    title,
+    setTitle,
+    activeTab,
+    setActiveTab,
+    messageHistory,
+    announcements,
+    isLoadingHistory,
+    isLoadingAnnouncements,
+    isSending,
+    handleSend,
+    handleDeleteAnnouncement,
+    handleViewAnnouncement,
+    refreshHistory,
     sendAnnouncement,
-    getMessageLogs,
     apiState,
   } = useMessaging();
-
-  const [messageHistory, setMessageHistory] = useState<MessageLog[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [title, setTitle] = useState('');
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async (): Promise<void> => {
-      try {
-        await getAnnouncements({ page: 1, limit: 10 });
-      } catch {
-        // Error already handled in hook
-      }
-
-      // Load message history
-      if (isMounted) {
-        setIsLoadingHistory(true);
-      }
-      try {
-        const data = await getMessageLogs({ page: 1, limit: 10 });
-        if (isMounted) {
-          setMessageHistory(data);
-        }
-      } catch {
-        // Error already handled in hook
-      } finally {
-        if (isMounted) {
-          setIsLoadingHistory(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSend = async (): Promise<void> => {
-    if (!message.trim() || !title.trim()) {
-      toast.error('Please provide both title and message content');
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      const targetType: AnnouncementTargetType =
-        recipientType === 'all'
-          ? 'all'
-          : recipientType === 'defaulters'
-            ? 'defaulters'
-            : recipientType === 'paid'
-              ? 'paid'
-              : 'custom';
-
-      const announcement = await createAnnouncement({
-        title,
-        content: message,
-        type: 'announcement' as AnnouncementType,
-        targetType,
-        channel: channel === 'whatsapp' ? 'whatsapp' : 'sms',
-        status: 'draft' as AnnouncementStatus,
-      });
-
-      if (announcement) {
-        await sendAnnouncement(announcement.id);
-        setMessage('');
-        setTitle('');
-        // Refresh data after sending
-        try {
-          await getAnnouncements({ page: 1, limit: 10 });
-          const data = await getMessageLogs({ page: 1, limit: 10 });
-          setMessageHistory(data);
-        } catch {
-          // Error already handled in hook
-        }
-      }
-    } catch {
-      // Error already handled in hook
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8">
@@ -203,24 +126,113 @@ export const Messaging: React.FC = () => {
           </div>
         </div>
 
-        {/* Templates */}
-        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
-          <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
-            <LayoutTemplate className="mr-2 text-cyan-600" size={18} />
-            Quick Templates
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <TemplateCard title="Birthday Wish" type="Celebration" />
-            <TemplateCard title="Final Dues Warning" type="Urgent" />
-            <TemplateCard title="AGM Notification" type="Event" />
-            <TemplateCard title="Payment Received" type="System" />
-          </div>
+          {/* Announcements List */}
+          {activeTab === 'announcements' && (
+            <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
+              <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
+                <LayoutTemplate className="mr-2 text-cyan-600" size={18} />
+                All Announcements
+              </h4>
+              {isLoadingAnnouncements ? (
+                <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                  Loading announcements...
+                </div>
+              ) : announcements.length > 0 ? (
+                <div className="space-y-3">
+                  {announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h5 className="font-bold text-slate-800 truncate">{announcement.title}</h5>
+                            <span
+                              className={classNames(
+                                'px-2 py-1 rounded-full text-[10px] font-bold uppercase',
+                                announcement.status === 'sent'
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : announcement.status === 'failed'
+                                    ? 'bg-red-50 text-red-600'
+                                    : announcement.status === 'sending'
+                                      ? 'bg-amber-50 text-amber-600'
+                                      : 'bg-slate-50 text-slate-600'
+                              )}
+                            >
+                              {announcement.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-600 line-clamp-2 mb-2">
+                            {announcement.content}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <span>Target: {announcement.targetType}</span>
+                            <span>Channel: {announcement.channel}</span>
+                            {announcement.sentAt && (
+                              <span>Sent: {formatDate(new Date(announcement.sentAt), 'MMM dd, yyyy')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4 shrink-0">
+                          <button
+                            onClick={() => handleViewAnnouncement(announcement.id)}
+                            className="p-2 rounded-lg bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-600 transition-colors"
+                            title="View/Edit"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          {announcement.status === 'draft' && (
+                            <button
+                              onClick={() => sendAnnouncement(announcement.id)}
+                              disabled={apiState.sendAnnouncement}
+                              className="p-2 rounded-lg bg-white hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-colors disabled:opacity-50"
+                              title="Send"
+                            >
+                              <Send size={16} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteAnnouncement(announcement.id)}
+                            disabled={apiState.deleteAnnouncement}
+                            className="p-2 rounded-lg bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                  No announcements yet. Create one to get started.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Templates */}
+          {activeTab === 'compose' && (
+            <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
+              <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
+                <LayoutTemplate className="mr-2 text-cyan-600" size={18} />
+                Quick Templates
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <TemplateCard title="Birthday Wish" type="Celebration" />
+                <TemplateCard title="Final Dues Warning" type="Urgent" />
+                <TemplateCard title="AGM Notification" type="Event" />
+                <TemplateCard title="Payment Received" type="System" />
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
       {/* Stats/History Side */}
       <div className="space-y-4 sm:space-y-6">
-        <div className=" flex flex-col bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full max-h-[600px]">
+        <div className="flex flex-col bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 h-full max-h-[600px]">
           <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm sm:text-base">
             <History className="mr-2 text-cyan-600" size={18} />
             Recent History
@@ -237,14 +249,14 @@ export const Messaging: React.FC = () => {
                     key={log.id}
                     className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                       <Smartphone size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-bold text-slate-700 capitalize truncate">
                         {log.messageType.replace('_', ' ')}
                       </p>
-                      <p className="text-xs text-slate-400 break-words">
+                      <p className="text-xs text-slate-400 wrap-break-words">
                         To {log.recipientName} • {new Date(log.createdAt).toLocaleString()}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-2">
@@ -272,18 +284,8 @@ export const Messaging: React.FC = () => {
             </div>
           )}
           <button
-            onClick={async () => {
-              setIsLoadingHistory(true);
-              try {
-                const data = await getMessageLogs({ page: 1, limit: 10 });
-                setMessageHistory(data);
-              } catch {
-                // Error already handled in hook
-              } finally {
-                setIsLoadingHistory(false);
-              }
-            }}
-            className="w-full mt-4 sm:mt-6 py-2 text-xs sm:text-sm font-bold text-cyan-600 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors mt-auto"
+            onClick={refreshHistory}
+            className="w-full py-2 text-xs sm:text-sm font-bold text-cyan-600 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors mt-auto"
           >
             Refresh History
           </button>

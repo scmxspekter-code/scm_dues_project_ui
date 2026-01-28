@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Search,
   Download,
@@ -7,8 +7,10 @@ import {
   ArrowUpDown,
   Filter,
   Loader2,
+  Send,
 } from 'lucide-react';
 import { DefaulterActionModal } from '../components/DefaulterActionModal';
+import { BulkReminderModal } from '../components/BulkReminderModal';
 import { useDefaulters } from '../hooks/useDefaulters';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
@@ -32,13 +34,17 @@ export const Defaulters: React.FC = () => {
     handleSort,
     isLoading,
     isExporting,
+    sendRemindersBulk,
+    isSendingBulkReminders,
+    isBulkReminderModalOpen,
+    setIsBulkReminderModalOpen,
   } = useDefaulters();
 
   const { defaulters } = useAppSelector((state) => state.defaulters);
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div className="flex-1 max-w-md">
           <Input
             type="text"
@@ -52,6 +58,23 @@ export const Defaulters: React.FC = () => {
           />
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setIsBulkReminderModalOpen(true)}
+            disabled={isSendingBulkReminders || isLoading}
+            className="flex items-center space-x-2 px-6 py-3 bg-cyan-600 text-white rounded-2xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSendingBulkReminders ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              <>
+                <Send size={18} />
+                <span>Send Bulk Reminders</span>
+              </>
+            )}
+          </button>
           <button
             onClick={handleExport}
             disabled={isExporting}
@@ -100,8 +123,8 @@ export const Defaulters: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex sm:flex-row flex-col gap-3 items-center justify-between flex-shrink-0">
+      <div className="bg-white rounded-4xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex sm:flex-row flex-col gap-3 items-center justify-between shrink-0">
           <h3 className="font-bold text-slate-800 flex items-center">
             Defaulter Watchlist
             <span className="ml-3 px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-extrabold uppercase tracking-tight">
@@ -224,7 +247,7 @@ export const Defaulters: React.FC = () => {
 
         {/* Pagination */}
 
-        <div className="flex-shrink-0 border-t border-slate-100">
+        <div className="shrink-0 border-t border-slate-100">
           <Pagination
             meta={paginationMeta}
             onPageChange={handlePageChange}
@@ -236,6 +259,14 @@ export const Defaulters: React.FC = () => {
       </div>
 
       <DefaulterActionModal />
+
+      {/* Bulk Reminder Modal */}
+      <BulkReminderModal
+        isOpen={isBulkReminderModalOpen}
+        onClose={() => setIsBulkReminderModalOpen(false)}
+        onSend={sendRemindersBulk}
+        isSending={isSendingBulkReminders}
+      />
     </div>
   );
 };

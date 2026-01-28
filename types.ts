@@ -172,6 +172,7 @@ export interface PaymentRecord {
   fee: number;
   rawWebhookData: Record<string, unknown>;
   createdAt: string;
+  [key: string]: unknown;
 }
 
 // Collection History Types

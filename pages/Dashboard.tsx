@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   BarChart,
   Bar,
@@ -11,7 +11,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { TrendingUp, Users, AlertCircle, CheckCircle, CreditCard } from 'lucide-react';
+import { TrendingUp, Users, AlertCircle, CheckCircle, CreditCard, FileText } from 'lucide-react';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAppSelector } from '@/store/hooks';
 import { StatCardSkeleton, ChartSkeleton, PieChartSkeleton } from '../components/Skeleton';
@@ -39,11 +39,18 @@ const StatCard: React.FC<{
 );
 
 export const Dashboard: React.FC = () => {
-  const { COLORS, apiState, getChartData } = useDashboard();
+  const {
+    COLORS,
+    apiState,
+    getChartData,
+    selectedPeriod,
+    handlePeriodChange,
+    isExportingReport,
+    handleExportReport,
+  } = useDashboard();
   const { stats, pieData, chartData } = useAppSelector((state) => state.dashboard);
   const isLoading = apiState.stats;
   const isLoadingChart = apiState.paymentsReport;
-  const [selectedPeriod, setSelectedPeriod] = useState<'6months' | 'year'>('6months');
 
   return (
     <div className="space-y-8">
@@ -100,9 +107,7 @@ export const Dashboard: React.FC = () => {
               <select
                 value={selectedPeriod}
                 onChange={(e) => {
-                  const period = e.target.value as '6months' | 'year';
-                  setSelectedPeriod(period);
-                  getChartData(period);
+                  handlePeriodChange(e.target.value as '6months' | 'year');
                 }}
                 className="bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
               >
@@ -202,6 +207,77 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Reports Section */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-6">
+          <h4 className="font-bold text-slate-800 flex items-center">
+            <FileText className="mr-2 text-cyan-600" size={20} />
+            Reports
+          </h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            onClick={() => handleExportReport('payments')}
+            disabled={isExportingReport === 'payments'}
+            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <CreditCard size={20} className="text-cyan-600" />
+              {isExportingReport === 'payments' && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
+              )}
+            </div>
+            <h5 className="font-bold text-slate-800 text-sm">Payments Report</h5>
+            <p className="text-xs text-slate-500 mt-1">Export payment records</p>
+          </button>
+
+          <button
+            onClick={() => handleExportReport('reminders')}
+            disabled={isExportingReport === 'reminders'}
+            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <AlertCircle size={20} className="text-amber-600" />
+              {isExportingReport === 'reminders' && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
+              )}
+            </div>
+            <h5 className="font-bold text-slate-800 text-sm">Reminders Report</h5>
+            <p className="text-xs text-slate-500 mt-1">Export reminder history</p>
+          </button>
+
+          <button
+            onClick={() => handleExportReport('messages')}
+            disabled={isExportingReport === 'messages'}
+            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <FileText size={20} className="text-blue-600" />
+              {isExportingReport === 'messages' && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
+              )}
+            </div>
+            <h5 className="font-bold text-slate-800 text-sm">Messages Report</h5>
+            <p className="text-xs text-slate-500 mt-1">Export message logs</p>
+          </button>
+
+          <button
+            onClick={() => handleExportReport('defaulters')}
+            disabled={isExportingReport === 'defaulters'}
+            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <Users size={20} className="text-red-600" />
+              {isExportingReport === 'defaulters' && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
+              )}
+            </div>
+            <h5 className="font-bold text-slate-800 text-sm">Defaulters Report</h5>
+            <p className="text-xs text-slate-500 mt-1">Export defaulters list</p>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-import React from 'react';
-import { Search, Filter, Plus, Phone, MoreVertical } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, Plus, Phone, MoreVertical, Link2 } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { AddMemberDrawer } from '../components/AddMemberDrawer';
 import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
+import { BulkPaymentLinksModal } from '../components/BulkPaymentLinksModal';
 import { Member, PaymentStatus } from '../types';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
@@ -24,10 +25,21 @@ export const Members: React.FC = () => {
     deleteMember,
     markAsPaid,
     setStatusFilter,
+    createPaymentLinksBulk,
+    isBulkPaymentLinksModalOpen,
+    setIsBulkPaymentLinksModalOpen,
   } = useMembers();
+
   return (
     <>
       <AddMemberDrawer />
+      <BulkPaymentLinksModal
+        isOpen={isBulkPaymentLinksModalOpen}
+        onClose={() => setIsBulkPaymentLinksModalOpen(false)}
+        onCreate={createPaymentLinksBulk}
+        members={members}
+        isCreating={apiState.createPaymentLinksBulk}
+      />
       <div className="flex flex-col h-full space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
           <div className="flex-1 max-w-md">
@@ -58,6 +70,14 @@ export const Members: React.FC = () => {
               ]}
               placement="bottom-right"
             />
+            <button
+              onClick={() => setIsBulkPaymentLinksModalOpen(true)}
+              disabled={apiState.createPaymentLinksBulk || members.length === 0}
+              className="flex items-center space-x-2 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Link2 size={18} />
+              <span>Bulk Links</span>
+            </button>
             <button
               onClick={toggleAddMemberDrawer}
               className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium"

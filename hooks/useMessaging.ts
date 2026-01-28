@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Announcement,
   CreateAnnouncementPayload,
@@ -10,6 +10,9 @@ import {
   TriggerAnniversaryPayload,
   isApiError,
   IApiParams,
+  AnnouncementTargetType,
+  AnnouncementType,
+  AnnouncementStatus,
 } from '../types';
 import { $api } from '@/api';
 import toast from 'react-hot-toast';
@@ -21,6 +24,14 @@ export const useMessaging = () => {
   const [recipientType, setRecipientType] = useState<RecipientType>('defaulters');
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [message, setMessage] = useState('');
+  const [title, setTitle] = useState('');
+  const [activeTab, setActiveTab] = useState<'compose' | 'announcements' | 'history'>('compose');
+  const [messageHistory, setMessageHistory] = useState<MessageLog[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [apiState, setApiState] = useState({
     sendAnnouncement: false,
     getAnnouncements: false,
@@ -34,10 +45,141 @@ export const useMessaging = () => {
     triggerBulkAnniversary: false,
   });
 
-  const handleSend = (): void => {
-    // TODO: Implement send logic using announcements API or bulk reminders
-    // This function is not currently used
-    void { recipientType, channel, message };
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    isMountedRef.current = true;
+
+    const loadData = async (): Promise<void> => {
+      // Load announcements
+      if (isMounted) {
+        setIsLoadingAnnouncements(true);
+      }
+      try {
+        const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
+        if (isMounted) {
+          setAnnouncements(announcementsData);
+        }
+      } catch {
+        // Error already handled in hook
+      } finally {
+        if (isMounted) {
+          setIsLoadingAnnouncements(false);
+        }
+      }
+
+      // Load message history
+      if (isMounted) {
+        setIsLoadingHistory(true);
+      }
+      try {
+        const data = await getMessageLogs({ page: 1, limit: 10 });
+        if (isMounted) {
+          setMessageHistory(data);
+        }
+      } catch {
+        // Error already handled in hook
+      } finally {
+        if (isMounted) {
+          setIsLoadingHistory(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+      isMountedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSend = async (): Promise<void> => {
+    if (!message.trim() || !title.trim()) {
+      toast.error('Please provide both title and message content');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const targetType: AnnouncementTargetType =
+        recipientType === 'all'
+          ? 'all'
+          : recipientType === 'defaulters'
+            ? 'defaulters'
+            : recipientType === 'paid'
+              ? 'paid'
+              : 'custom';
+
+      const announcement = await createAnnouncement({
+        title,
+        content: message,
+        type: 'announcement' as AnnouncementType,
+        targetType,
+        channel: channel === 'whatsapp' ? 'whatsapp' : 'sms',
+        status: 'draft' as AnnouncementStatus,
+      });
+
+      if (announcement) {
+        await sendAnnouncement(announcement.id);
+        setMessage('');
+        setTitle('');
+        // Refresh data after sending
+        try {
+          const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
+          setAnnouncements(announcementsData);
+          const data = await getMessageLogs({ page: 1, limit: 10 });
+          setMessageHistory(data);
+        } catch {
+          // Error already handled in hook
+        }
+      }
+    } catch {
+      // Error already handled in hook
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string): Promise<void> => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+    try {
+      await deleteAnnouncement(id);
+      const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
+      setAnnouncements(announcementsData);
+    } catch {
+      // Error already handled in hook
+    }
+  };
+
+  const handleViewAnnouncement = async (id: string): Promise<void> => {
+    try {
+      const announcement = await getAnnouncementById(id);
+      if (announcement) {
+        setSelectedAnnouncement(announcement);
+        setTitle(announcement.title);
+        setMessage(announcement.content);
+        setActiveTab('compose');
+      }
+    } catch {
+      // Error already handled in hook
+    }
+  };
+
+  const refreshHistory = async (): Promise<void> => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await getMessageLogs({ page: 1, limit: 10 });
+      setMessageHistory(data);
+    } catch {
+      // Error already handled in hook
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   const createAnnouncement = async (
@@ -247,7 +389,20 @@ export const useMessaging = () => {
     setChannel,
     message,
     setMessage,
+    title,
+    setTitle,
+    activeTab,
+    setActiveTab,
+    messageHistory,
+    announcements,
+    selectedAnnouncement,
+    isLoadingHistory,
+    isLoadingAnnouncements,
+    isSending,
     handleSend,
+    handleDeleteAnnouncement,
+    handleViewAnnouncement,
+    refreshHistory,
     createAnnouncement,
     getAnnouncements,
     getAnnouncementById,

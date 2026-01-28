@@ -27,6 +27,8 @@ export const useDashboard = () => {
     messagesReport: false,
     defaultersReport: false,
   });
+  const [selectedPeriod, setSelectedPeriod] = useState<'6months' | 'year'>('6months');
+  const [isExportingReport, setIsExportingReport] = useState<string | null>(null);
 
   const COLORS = ['#06b6d4', '#ef4444', '#f59e0b'];
 
@@ -220,6 +222,47 @@ export const useDashboard = () => {
     }
   };
 
+  const handleExportReport = async (
+    type: 'payments' | 'reminders' | 'messages' | 'defaulters'
+  ): Promise<void> => {
+    setIsExportingReport(type);
+    try {
+      let blob: Blob;
+      switch (type) {
+        case 'payments':
+          blob = await $api.exports.exportPayments({ page: 1, limit: 1000 });
+          break;
+        case 'messages':
+          blob = await $api.exports.exportMessages({ page: 1, limit: 1000 });
+          break;
+        case 'defaulters':
+          blob = await $api.exports.exportDefaulters({ page: 1, limit: 1000 });
+          break;
+        default:
+          blob = await $api.exports.exportCollections({ page: 1, limit: 1000 });
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${type}-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} report exported successfully`);
+    } catch {
+      toast.error(`Failed to export ${type} report`);
+    } finally {
+      setIsExportingReport(null);
+    }
+  };
+
+  const handlePeriodChange = (period: '6months' | 'year'): void => {
+    setSelectedPeriod(period);
+    getChartData(period);
+  };
+
   useEffect(() => {
     getStats();
     getChartData('6months'); // Load initial chart data
@@ -235,5 +278,10 @@ export const useDashboard = () => {
     getRemindersReport,
     getMessagesReport,
     getChartData,
+    selectedPeriod,
+    setSelectedPeriod,
+    handlePeriodChange,
+    isExportingReport,
+    handleExportReport,
   };
 };

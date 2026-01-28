@@ -9,6 +9,8 @@ import {
   PaymentLink,
   MessageLog,
   CollectionHistory,
+  PaymentRecord,
+  CreatePaymentLinksBulkPayload,
   isApiError,
 } from '@/types';
 import { $api } from '@/api';
@@ -22,6 +24,7 @@ import {
 } from '@/store/slices/membersSlice';
 import { toast } from 'react-hot-toast';
 import { debounce } from '@/utils/debounce';
+import { FormikHelpers } from 'formik';
 
 export const useMembers = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +45,8 @@ export const useMembers = () => {
     getPaymentLink: false,
     createPaymentLink: false,
     markAsPaid: false,
+    getCollectionPayments: false,
+    createPaymentLinksBulk: false,
     getBirthdays: false,
     getAnniversaries: false,
   });
@@ -63,6 +68,7 @@ export const useMembers = () => {
   };
 
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | undefined>(undefined);
+  const [isBulkPaymentLinksModalOpen, setIsBulkPaymentLinksModalOpen] = useState(false);
 
   // Memoize getMembers to prevent unnecessary recreations
   const getMembers = useCallback(
@@ -139,7 +145,7 @@ export const useMembers = () => {
     getMembers(params);
   }, [params, getMembers]);
 
-  const createMember = async (payload: ICreateMemberPayload): Promise<void> => {
+  const createMember = async (payload: ICreateMemberPayload,helpers:FormikHelpers<ICreateMemberPayload>): Promise<void> => {
     try {
       setApiState((prev) => ({ ...prev, createMember: true }));
       const newPayload = { ...payload, phoneNumber: payload.phoneNumber.replace(/^0/, '+234') };
@@ -159,6 +165,7 @@ export const useMembers = () => {
       await getMembers(refreshParams);
 
       toast.success('Member created successfully');
+      helpers.resetForm();
     } catch (error: unknown) {
       if (isApiError(error)) {
         toast.error(error.message || 'Failed to create member');
@@ -332,6 +339,50 @@ export const useMembers = () => {
     }
   };
 
+  const getCollectionPayments = async (id: string): Promise<PaymentRecord[]> => {
+    try {
+      setApiState((prev) => ({ ...prev, getCollectionPayments: true }));
+      const { data } = await $api.members.getCollectionPayments(id);
+      return data || [];
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to fetch payment history');
+      } else {
+        toast.error('Failed to fetch payment history');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, getCollectionPayments: false }));
+    }
+  };
+
+  const createPaymentLinksBulk = async (ids: string[]): Promise<void> => {
+    try {
+      setApiState((prev) => ({ ...prev, createPaymentLinksBulk: true }));
+      const payload: CreatePaymentLinksBulkPayload = { collectionIds: ids };
+      const { data } = await $api.members.createPaymentLinksBulk(payload);
+      if (data && data.length > 0) {
+        toast.success(`Successfully created ${data.length} payment link(s)`);
+        // Refresh members list
+        await getMembers({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearchTerm || undefined,
+          status: statusFilter,
+        });
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to create bulk payment links');
+      } else {
+        toast.error('Failed to create bulk payment links');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, createPaymentLinksBulk: false }));
+    }
+  };
+
   const getBirthdays = async (): Promise<Member[]> => {
     try {
       setApiState((prev) => ({ ...prev, getBirthdays: true }));
@@ -384,6 +435,8 @@ export const useMembers = () => {
     getPaymentLink,
     createPaymentLink,
     markAsPaid,
+    getCollectionPayments,
+    createPaymentLinksBulk,
     getBirthdays,
     getAnniversaries,
     toggleAddMemberDrawer: toggleAddMemberDrawerHandler,
@@ -402,5 +455,7 @@ export const useMembers = () => {
     apiState,
     setSelectedMember,
     toggleMemberDrawer: toggleMemberDrawerHandler,
+    isBulkPaymentLinksModalOpen,
+    setIsBulkPaymentLinksModalOpen,
   };
 };

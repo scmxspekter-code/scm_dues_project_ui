@@ -53,6 +53,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { to: '/defaulters', icon: <AlertTriangle size={20} />, label: 'Defaulters' },
     { to: '/payments', icon: <CreditCard size={20} />, label: 'Payments' },
     { to: '/messaging', icon: <MessageSquare size={20} />, label: 'Messaging' },
+    { to: '/celebrations', icon: <Bell size={20} />, label: 'Celebrations' },
     { to: '/settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 

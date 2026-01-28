@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Member, PaginationMeta, DefaultersStats, MessageLog } from '../types';
+import { Member, PaginationMeta, DefaultersStats, MessageLog, isApiError } from '../types';
 import {
   setDefaulters,
   toggleDefaulterDrawer,
@@ -20,6 +20,7 @@ export const useDefaulters = () => {
     defaultersReport: false,
     markAsDefaulted: false,
     getDefaultersStats: false,
+    sendRemindersBulk: false,
   });
   const dispatch = useAppDispatch();
 
@@ -32,6 +33,7 @@ export const useDefaulters = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [debouncedSortField, setDebouncedSortField] = useState<SortField>('amount');
   const [debouncedSortOrder, setDebouncedSortOrder] = useState<SortOrder>('desc');
+  const [isBulkReminderModalOpen, setIsBulkReminderModalOpen] = useState(false);
 
   // Debounce search term
   const debouncedSetSearch = useRef(
@@ -262,6 +264,33 @@ export const useDefaulters = () => {
     }
   };
 
+  const sendRemindersBulk = async (channel: 'sms' | 'whatsapp'): Promise<void> => {
+    try {
+      setApiState((prev) => ({ ...prev, sendRemindersBulk: true }));
+      const { data } = await $api.members.sendRemindersBulk(channel);
+      if (data) {
+        toast.success(
+          `Bulk reminders sent: ${data.sent} successful, ${data.failed} failed out of ${data.total} total`
+        );
+        // Refresh defaulters list
+        await getDefaulters({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearchTerm || undefined,
+        });
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to send bulk reminders');
+      } else {
+        toast.error('Failed to send bulk reminders');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, sendRemindersBulk: false }));
+    }
+  };
+
   return {
     searchTerm,
     setSearchTerm,
@@ -280,6 +309,10 @@ export const useDefaulters = () => {
     handleSort,
     isLoading: apiState.defaulters,
     isExporting: apiState.defaultersReport,
+    sendRemindersBulk,
+    isSendingBulkReminders: apiState.sendRemindersBulk,
+    isBulkReminderModalOpen,
+    setIsBulkReminderModalOpen,
     getMessageHistory,
     // DefaulterActionModal state and functions
     reminderHistory,

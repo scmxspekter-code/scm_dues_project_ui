@@ -1,4 +1,5 @@
 import React from 'react';
+import classNames from 'classnames';
 
 interface SkeletonProps {
   className?: string;
@@ -35,7 +36,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
   return (
     <div
-      className={`${baseClasses} ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
+      className={classNames(baseClasses, variantClasses[variant], animationClasses[animation], className)}
       style={style}
     />
   );
@@ -91,7 +92,7 @@ export const PieChartSkeleton: React.FC = () => (
 );
 
 export const AIBannerSkeleton: React.FC = () => (
-  <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 shadow-xl shadow-cyan-100 flex items-start space-x-4">
+    <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 shadow-xl shadow-cyan-100 flex items-start space-x-4">
     <Skeleton variant="circular" width={56} height={56} className="bg-white/20" />
     <div className="flex-1">
       <Skeleton width={200} height={24} className="mb-2 bg-white/20" />
