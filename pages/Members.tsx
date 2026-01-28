@@ -73,11 +73,11 @@ export const Members: React.FC = () => {
                 header: 'Member',
                 accessor: (member) => (
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold">
                       {member.name.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-slate-800">{member.name}</div>
+                      <div className="font-bold text-slate-800 whitespace-nowrap">{member.name}</div>
                       <div className="text-xs text-slate-400 italic">
                         Joined {formatDate(new Date(member.createdAt), 'dd MM yyyy')}
                       </div>
@@ -134,7 +134,7 @@ export const Members: React.FC = () => {
                       e.stopPropagation();
                       setSelectedMember(member);
                     }}
-                    className="text-cyan-600 font-bold text-sm hover:underline"
+                    className="text-cyan-600 font-bold text-sm hover:underline whitespace-nowrap"
                   >
                     View Profile
                   </button>

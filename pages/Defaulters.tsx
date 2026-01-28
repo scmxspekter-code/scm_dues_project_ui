@@ -102,7 +102,7 @@ export const Defaulters: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between flex-shrink-0">
+        <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex sm:flex-row flex-col gap-3 items-center justify-between flex-shrink-0">
           <h3 className="font-bold text-slate-800 flex items-center">
             Defaulter Watchlist
             <span className="ml-3 px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-extrabold uppercase tracking-tight">
@@ -125,12 +125,12 @@ export const Defaulters: React.FC = () => {
               headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (defaulter) => (
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-lg group-hover:bg-cyan-100 group-hover:text-cyan-600 transition-colors">
+                  <div className="w-12 h-12 rounded-2xl shrink-0 bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-lg group-hover:bg-cyan-100 group-hover:text-cyan-600 transition-colors">
                     {defaulter.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800 text-base">{defaulter.name}</div>
-                    <div className="text-sm text-slate-400 font-medium">
+                    <div className="font-bold text-slate-800 text-base whitespace-nowrap">{defaulter.name}</div>
+                    <div className="text-sm text-slate-400 font-medium whitespace-nowrap">
                       {defaulter.phoneNumber}
                     </div>
                   </div>

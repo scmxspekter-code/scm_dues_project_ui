@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
+import classNames from 'classnames';
 
 const SidebarItem: React.FC<{
   to: string;
@@ -52,13 +53,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="min-h-screen flex bg-slate-50">
       {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed bottom-6 right-6 z-50 bg-cyan-600 text-white p-4 rounded-full shadow-2xl"
-      >
-        {isOpen ? <X /> : <Menu />}
-      </button>
+  
+{/* {overlay} */}
+{isOpen && (
+<div onClick={() => setIsOpen(prev=>!prev)} className={classNames("fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out",{
+  'opacity-100':isOpen,
 
+})}></div>
+)}
       {/* Sidebar */}
       <aside
         className={`
@@ -67,8 +69,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
       >
-        <div className="h-full flex flex-col px-6 py-8">
-          <div className="flex items-center space-x-3 mb-12">
+        <div className="h-full flex flex-col px-2 md:px-6 py-8">
+          <div className="flex items-center justify-between  mb-12">
+
+          <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">S</span>
             </div>
@@ -78,6 +82,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 SCM Admin
               </p>
             </div>
+          </div>
+          <button onClick={() => setIsOpen(prev=>!prev)} className="p-2 t relative lg:hidden"><X className="ext-slate-800 hover:text-cyan-500 transition-colors" strokeWidth={3} size={20} /></button>
           </div>
 
           <nav className="flex-1 space-y-2">
@@ -111,6 +117,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {menuItems.find((i) => i.to === location.pathname)?.label || 'Overview'}
           </h2>
           <div className="flex items-center space-x-4">
+         
             <button className="p-2 text-slate-400 hover:text-cyan-500 transition-colors relative">
               <Bell size={22} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -118,10 +125,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden ring-2 ring-slate-100 ring-offset-2">
               <img src="https://picsum.photos/seed/admin/100" alt="Admin" />
             </div>
+            <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="lg:hidden  bg-cyan-600 text-white p-2 rounded-full shadow-2xl"
+      >
+      <Menu />
+      </button>
           </div>
         </header>
 
-        <section className="flex-1 overflow-y-auto p-8 bg-slate-50/50">{children}</section>
+        <section className="flex-1 overflow-y-auto p-2 md:p-8 bg-slate-50/50">{children}</section>
       </main>
     </div>
   );
