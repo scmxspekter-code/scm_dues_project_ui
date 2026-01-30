@@ -18,8 +18,6 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setMembers,
   toggleAddMember,
-  setSelectedMember as setSelectedMemberAction,
-  toggleMemberDrawer,
   updateMember as updateMemberAction,
 } from '@/store/slices/membersSlice';
 import { toast } from 'react-hot-toast';
@@ -32,6 +30,8 @@ export const useMembers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberForEdit, setMemberForEdit] = useState<Member | null>(null);
   const dispatch = useAppDispatch();
   const { members, isAddMemberDrawerOpen } = useAppSelector((state) => state.members);
   const [apiState, setApiState] = useState({
@@ -49,6 +49,7 @@ export const useMembers = () => {
     createPaymentLinksBulk: false,
     getBirthdays: false,
     getAnniversaries: false,
+    createMembersBulk: false,
   });
   const toggleAddMemberDrawerHandler = () => {
     dispatch(toggleAddMember());
@@ -69,6 +70,14 @@ export const useMembers = () => {
 
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | undefined>(undefined);
   const [isBulkPaymentLinksModalOpen, setIsBulkPaymentLinksModalOpen] = useState(false);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+
+  const closeDetailDrawer = useCallback(() => setSelectedMember(null), []);
+  const closeEditDrawer = useCallback(() => setMemberForEdit(null), []);
+  const openEditDrawer = useCallback((m: Member) => {
+    setSelectedMember(null);
+    setMemberForEdit(m);
+  }, []);
 
   // Memoize getMembers to prevent unnecessary recreations
   const getMembers = useCallback(
@@ -144,6 +153,37 @@ export const useMembers = () => {
     prevParamsRef.current = { ...params };
     getMembers(params);
   }, [params, getMembers]);
+
+  const createMembersBulk = async (payloads: ICreateMemberPayload[]): Promise<void> => {
+    if (payloads.length === 0) return;
+    try {
+      setApiState((prev) => ({ ...prev, createMembersBulk: true }));
+      const normalized = payloads.map((p) => ({
+        ...p,
+        phoneNumber: (p.phoneNumber || '').replace(/^0/, '+234'),
+      }));
+      await $api.members.createMember(normalized);
+      const refreshParams: IApiParams = {
+        page: 1,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        status: statusFilter,
+      };
+      prevParamsRef.current = { ...refreshParams };
+      setCurrentPage(1);
+      await getMembers(refreshParams);
+      toast.success(`${payloads.length} member(s) created successfully`);
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to create members');
+      } else {
+        toast.error('Failed to create members');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, createMembersBulk: false }));
+    }
+  };
 
   const createMember = async (payload: ICreateMemberPayload,helpers:FormikHelpers<ICreateMemberPayload>): Promise<void> => {
     try {
@@ -417,16 +457,9 @@ export const useMembers = () => {
     }
   };
 
-  const setSelectedMember = (member: Member | null): void => {
-    dispatch(setSelectedMemberAction(member));
-  };
-
-  const toggleMemberDrawerHandler = (): void => {
-    dispatch(toggleMemberDrawer());
-  };
-
   return {
     createMember,
+    createMembersBulk,
     updateMember,
     deleteMember,
     sendReminder,
@@ -453,9 +486,17 @@ export const useMembers = () => {
     handlePageChange,
     handleItemsPerPageChange,
     apiState,
+    selectedMember,
     setSelectedMember,
-    toggleMemberDrawer: toggleMemberDrawerHandler,
+    memberForEdit,
+    isDetailDrawerOpen: !!selectedMember,
+    isEditDrawerOpen: !!memberForEdit,
+    closeDetailDrawer,
+    openEditDrawer,
+    closeEditDrawer,
     isBulkPaymentLinksModalOpen,
     setIsBulkPaymentLinksModalOpen,
+    isBulkUploadModalOpen,
+    setIsBulkUploadModalOpen,
   };
 };

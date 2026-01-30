@@ -24,7 +24,7 @@ export const Celebrations: React.FC = () => {
       {/* Header with Tabs */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 className="text-2xl font-bold text-slate-800">Celebrations</h2>
+          <h2 className="text-sm font-bold text-slate-800">Celebrations</h2>
           <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-200">
             <button
               onClick={() => setActiveTab('birthdays')}
@@ -35,7 +35,7 @@ export const Celebrations: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-800'
               )}
             >
-              <Cake size={18} />
+              <Cake size={16} />
               <span>Birthdays ({birthdays.length})</span>
             </button>
             <button
@@ -47,7 +47,7 @@ export const Celebrations: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-800'
               )}
             >
-              <Heart size={18} />
+              <Heart size={16} />
               <span>Anniversaries ({anniversaries.length})</span>
             </button>
           </div>
@@ -58,7 +58,7 @@ export const Celebrations: React.FC = () => {
       {isLoading ? (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12">
           <div className="text-center">
-            <Loader2 size={32} className="animate-spin text-cyan-600 mx-auto mb-4" />
+            <Loader2 size={16} className="animate-spin text-cyan-600 mx-auto mb-4" />
             <p className="text-slate-400 italic font-medium">Loading celebrations...</p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const Celebrations: React.FC = () => {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-sm shrink-0">
                             {member.name.charAt(0)}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -113,7 +113,7 @@ export const Celebrations: React.FC = () => {
                         <button
                           onClick={() => handleSendBirthdayMessage(member.id)}
                           disabled={safeMessagingApiState.triggerBirthday}
-                          className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                           title="Send birthday message"
                         >
                           <Send size={16} />
@@ -123,7 +123,7 @@ export const Celebrations: React.FC = () => {
                   ))
                 ) : (
                   <div className="col-span-full py-12 text-center">
-                    <Cake size={48} className="text-slate-300 mx-auto mb-4" />
+                    <Cake size={16} className="text-slate-300 mx-auto mb-4" />
                     <p className="text-slate-400 font-medium">No upcoming birthdays</p>
                     <p className="text-xs text-slate-400 mt-2">
                       Birthday messages will appear here when members have their date of birth set
@@ -165,7 +165,7 @@ export const Celebrations: React.FC = () => {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm shrink-0">
                             {member.name.charAt(0)}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -183,7 +183,7 @@ export const Celebrations: React.FC = () => {
                         <button
                           onClick={() => handleSendAnniversaryMessage(member.id)}
                           disabled={safeMessagingApiState.triggerAnniversary}
-                          className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                           title="Send anniversary message"
                         >
                           <Send size={16} />
@@ -193,7 +193,7 @@ export const Celebrations: React.FC = () => {
                   ))
                 ) : (
                   <div className="col-span-full py-12 text-center">
-                    <Heart size={48} className="text-slate-300 mx-auto mb-4" />
+                    <Heart size={16} className="text-slate-300 mx-auto mb-4" />
                     <p className="text-slate-400 font-medium">No upcoming anniversaries</p>
                     <p className="text-xs text-slate-400 mt-2">
                       Anniversary messages will appear here when members have their anniversary date

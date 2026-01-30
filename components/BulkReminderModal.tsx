@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { X, MessageSquare, Smartphone } from 'lucide-react';
 import classNames from 'classnames';
 
@@ -9,6 +10,10 @@ interface BulkReminderModalProps {
   isSending: boolean;
 }
 
+const DURATION = 0.25;
+const EASE_OUT = 'power2.out';
+const EASE_IN = 'power2.in';
+
 export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
   isOpen,
   onClose,
@@ -16,62 +21,76 @@ export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
   isSending,
 }) => {
   const [selectedChannel, setSelectedChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) return;
+    gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) {
+      onClose();
+      return;
+    }
+    isClosingRef.current = true;
+    gsap.to(o, { opacity: 0, duration: DURATION, ease: EASE_IN });
+    gsap.to(p, {
+      scale: 0.95,
+      opacity: 0,
+      duration: DURATION,
+      ease: EASE_IN,
+      onComplete: () => {
+        isClosingRef.current = false;
+        onClose();
+      },
+    });
+  }, [onClose]);
 
   const handleSend = async (): Promise<void> => {
     await onSend(selectedChannel);
-    onClose();
+    handleClose();
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className={classNames(
-          'fixed inset-0 bg-black/50 z-50 transition-opacity duration-300',
-          {
-            'opacity-100': isOpen,
-            'opacity-0 pointer-events-none': !isOpen,
-          }
-        )}
-        onClick={onClose}
+        ref={overlayRef}
+        className="fixed inset-0 bg-black/50 z-50 pointer-events-auto"
+        onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div
-        className={classNames(
-          'fixed inset-0 z-50 flex items-center justify-center p-4',
-          {
-            'pointer-events-auto': isOpen,
-            'pointer-events-none': !isOpen,
-          }
-        )}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className={classNames(
-            'bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300',
-            {
-              'scale-100 opacity-100': isOpen,
-              'scale-95 opacity-0': !isOpen,
-            }
-          )}
+          ref={panelRef}
+          className="bg-white rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Send Bulk Reminders</h3>
+                <h3 className="text-sm font-bold text-slate-800">Send Bulk Reminders</h3>
                 <p className="text-sm text-slate-500 mt-1">
                   Send reminders to all defaulters via your chosen channel
                 </p>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
@@ -92,7 +111,7 @@ export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
                 >
                   <div className="flex flex-col items-center space-y-2">
                     <MessageSquare
-                      size={24}
+                      size={16}
                       className={selectedChannel === 'whatsapp' ? 'text-emerald-600' : 'text-slate-400'}
                     />
                     <span
@@ -119,7 +138,7 @@ export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
                 >
                   <div className="flex flex-col items-center space-y-2">
                     <Smartphone
-                      size={24}
+                      size={16}
                       className={selectedChannel === 'sms' ? 'text-blue-600' : 'text-slate-400'}
                     />
                     <span

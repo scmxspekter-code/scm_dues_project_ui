@@ -40,7 +40,6 @@ export const Pagination: React.FC<PaginationProps> = ({
   const itemsPerPage = meta?.perPage ?? legacyItemsPerPage;
   const hasPrevPage = meta?.hasPrevPage ?? currentPage > 1;
   const hasNextPage = meta?.hasNextPage ?? currentPage < (totalPages ?? 1);
-  const pagingCounter = meta?.pagingCounter ?? (currentPage - 1) * itemsPerPage + 1;
 
   // Calculate total pages if not provided
   const calculatedTotalPages =
@@ -88,8 +87,6 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   const pageNumbers = getPageNumbers();
-  const startItem = pagingCounter;
-  const endItem = totalItems ? Math.min(pagingCounter + itemsPerPage - 1, totalItems) : undefined;
 
   const handlePrevious = () => {
     if (disabled || !hasPrevPage) return;
@@ -126,41 +123,36 @@ export const Pagination: React.FC<PaginationProps> = ({
   return (
     <div
       className={classNames(
-        'flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50',
+        'flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50',
         className,
         {
           'opacity-50 pointer-events-none': disabled,
         }
       )}
     >
-      {/* Items info */}
+      {/* Page info - LHS */}
       <div
-        className={classNames('text-sm', {
-          'text-slate-600': !disabled,
-          'text-slate-400': disabled,
-        })}
-      >
-        {totalItems !== undefined && startItem !== undefined && endItem !== undefined ? (
-          <span>
-            Showing <span className="font-bold text-slate-800">{startItem}</span> to{' '}
-            <span className="font-bold text-slate-800">{endItem}</span> of{' '}
-            <span className="font-bold text-slate-800">{totalItems}</span> results
-          </span>
-        ) : (
-          <span>
-            Page <span className="font-bold text-slate-800">{currentPage}</span> of{' '}
-            <span className="font-bold text-slate-800">{calculatedTotalPages}</span>
-          </span>
+        className={classNames(
+          'flex items-center justify-center sm:justify-start text-xs sm:text-sm shrink-0',
+          {
+            'text-slate-600': !disabled,
+            'text-slate-400': disabled,
+          }
         )}
+      >
+        <span>
+          Page <span className="font-bold text-slate-800">{currentPage}</span> of{' '}
+          <span className="font-bold text-slate-800">{calculatedTotalPages}</span>
+        </span>
       </div>
 
-      {/* Pagination controls */}
-      <div className="flex items-center gap-2">
-        {/* Items per page selector */}
+      {/* Pagination controls - wrap on small screens, larger touch targets on mobile */}
+      <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-2 min-w-0">
+        {/* Items per page selector - hide on very small, show from xs up */}
         {showItemsPerPage && onItemsPerPageChange && (
-          <div className="flex items-center gap-2 mr-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 mr-0 sm:mr-2 order-2 sm:order-1">
             <span
-              className={classNames('text-sm', {
+              className={classNames('hidden sm:inline text-xs sm:text-sm shrink-0', {
                 'text-slate-600': !disabled,
                 'text-slate-400': disabled,
               })}
@@ -173,7 +165,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 <button
                   disabled={disabled}
                   className={classNames(
-                    'flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 font-medium transition-colors',
+                    'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 font-medium transition-colors',
                     {
                       'hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer':
                         !disabled,
@@ -182,7 +174,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                   )}
                 >
                   <span>{itemsPerPage}</span>
-                  <ChevronDown size={16} className="text-slate-400" />
+                  <ChevronDown size={16} className="text-slate-400 shrink-0" />
                 </button>
               }
               items={itemsPerPageOptions.map((option) => ({
@@ -202,73 +194,90 @@ export const Pagination: React.FC<PaginationProps> = ({
           </div>
         )}
 
-        {/* Previous button */}
-        <button
-          onClick={handlePrevious}
-          disabled={disabled || !hasPrevPage}
-          className={classNames('p-2 rounded-lg border transition-colors', {
-            'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
-              hasPrevPage && !disabled,
-            'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
-              !hasPrevPage || disabled,
-          })}
-          aria-label="Previous page"
-        >
-          <ChevronLeft size={18} />
-        </button>
+        {/* Prev / Next + page numbers group */}
+        <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
+          {/* Previous button - larger touch target on mobile */}
+          <button
+            onClick={handlePrevious}
+            disabled={disabled || !hasPrevPage}
+            className={classNames(
+              'p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border transition-colors',
+              {
+                'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
+                  hasPrevPage && !disabled,
+                'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
+                  !hasPrevPage || disabled,
+              }
+            )}
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={16} />
+          </button>
 
-        {/* Page numbers */}
-        <div className="flex items-center gap-1">
-          {pageNumbers.map((page, index) => {
-            if (page === 'ellipsis') {
+          {/* Page numbers - hidden on mobile (xs), show from sm up */}
+          <div className="hidden sm:flex items-center gap-1">
+            {pageNumbers.map((page, index) => {
+              if (page === 'ellipsis') {
+                return (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-2 sm:px-3 py-1.5 text-slate-400 font-medium text-sm"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const pageNum = page as number;
+              const isActive = pageNum === currentPage;
+
               return (
-                <span key={`ellipsis-${index}`} className="px-3 py-1.5 text-slate-400 font-medium">
-                  ...
-                </span>
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageClick(pageNum)}
+                  disabled={disabled}
+                  className={classNames(
+                    'min-w-[32px] sm:min-w-[36px] px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                    {
+                      'bg-cyan-600 text-white': isActive && !disabled,
+                      'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 cursor-pointer':
+                        !isActive && !disabled,
+                      'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed':
+                        disabled,
+                    }
+                  )}
+                  aria-label={`Go to page ${pageNum}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {pageNum}
+                </button>
               );
-            }
+            })}
+          </div>
 
-            const pageNum = page as number;
-            const isActive = pageNum === currentPage;
+          {/* Mobile: current page label between prev/next (when page numbers hidden) */}
+          <span className="sm:hidden px-2 text-sm font-medium text-slate-600 min-w-8 text-center">
+            {currentPage}
+          </span>
 
-            return (
-              <button
-                key={pageNum}
-                onClick={() => handlePageClick(pageNum)}
-                disabled={disabled}
-                className={classNames(
-                  'min-w-[36px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                  {
-                    'bg-cyan-600 text-white': isActive && !disabled,
-                    'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 cursor-pointer':
-                      !isActive && !disabled,
-                    'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed':
-                      disabled,
-                  }
-                )}
-                aria-label={`Go to page ${pageNum}`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
+          {/* Next button */}
+          <button
+            onClick={handleNext}
+            disabled={disabled || !hasNextPage}
+            className={classNames(
+              'p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border transition-colors',
+              {
+                'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
+                  hasNextPage && !disabled,
+                'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
+                  !hasNextPage || disabled,
+              }
+            )}
+            aria-label="Next page"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
-
-        {/* Next button */}
-        <button
-          onClick={handleNext}
-          disabled={disabled || !hasNextPage}
-          className={classNames('p-2 rounded-lg border transition-colors', {
-            'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer':
-              hasNextPage && !disabled,
-            'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed':
-              !hasNextPage || disabled,
-          })}
-          aria-label="Next page"
-        >
-          <ChevronRight size={18} />
-        </button>
       </div>
     </div>
   );

@@ -5,18 +5,14 @@ interface MembersState {
   members: Member[];
   filteredMembers: Member[];
   searchTerm: string;
-  member: Member | null;
   isAddMemberDrawerOpen: boolean;
-  isDrawerOpen: boolean;
 }
 
 const initialState: MembersState = {
   members: [],
   filteredMembers: [],
   searchTerm: '',
-  member: null,
   isAddMemberDrawerOpen: false,
-  isDrawerOpen: false,
 };
 
 const membersSlice = createSlice({
@@ -30,16 +26,6 @@ const membersSlice = createSlice({
           m.name.toLowerCase().includes(action.payload.toLowerCase()) ||
           m.phoneNumber.toLowerCase().includes(action.payload.toLowerCase())
       );
-    },
-    setSelectedMember: (state, action: PayloadAction<Member | null>) => {
-      state.member = action.payload;
-      state.isDrawerOpen = !!action.payload;
-    },
-    toggleMemberDrawer: (state) => {
-      state.isDrawerOpen = !state.isDrawerOpen;
-      if (!state.isDrawerOpen) {
-        state.member = null;
-      }
     },
     addMember: (state, action: PayloadAction<Member[]>) => {
       state.members.push(...action.payload);
@@ -74,11 +60,9 @@ const membersSlice = createSlice({
 
 export const {
   setSearchTerm,
-  setSelectedMember,
   addMember,
   setMembers,
   updateMember,
   toggleAddMember,
-  toggleMemberDrawer,
 } = membersSlice.actions;
 export default membersSlice.reducer;

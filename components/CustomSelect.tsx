@@ -26,13 +26,14 @@ export interface CustomSelectProps {
   searchable?: boolean;
   className?: string;
   name?: string;
-  onBlur?: () => void;
+  /** Blur handler (e.g. Formik handleBlur). Called with event when available. */
+  onBlur?: (e?: React.FocusEvent<HTMLElement>) => void;
 }
 
 const sizeClasses = {
   sm: 'px-3 py-2 text-sm',
-  md: 'px-4 py-3',
-  lg: 'px-4 py-4 text-lg',
+  md: 'px-4 py-3 text-sm',
+  lg: 'px-4 py-4 text-sm',
 };
 
 const iconPadding = {
@@ -143,12 +144,12 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
               'text-slate-400': !selectedOption,
             })}
           >
-            {selectedOption?.icon && <span className="flex-shrink-0">{selectedOption.icon}</span>}
+            {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}
             <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
           </span>
           <ChevronDown
-            size={18}
-            className={classNames('text-slate-400 flex-shrink-0 ml-2 transition-transform', {
+            size={16}
+            className={classNames('text-slate-400 shrink-0 ml-2 transition-transform', {
               'rotate-180': isOpen,
             })}
           />
@@ -195,11 +196,11 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     )}
                   >
                     <span className="flex items-center space-x-2 flex-1">
-                      {option.icon && <span className="flex-shrink-0">{option.icon}</span>}
+                      {option.icon && <span className="shrink-0">{option.icon}</span>}
                       <span className="truncate">{option.label}</span>
                     </span>
                     {value === option.value && (
-                      <Check size={16} className="text-cyan-600 flex-shrink-0 ml-2" />
+                      <Check size={16} className="text-cyan-600 shrink-0 ml-2" />
                     )}
                   </button>
                 ))

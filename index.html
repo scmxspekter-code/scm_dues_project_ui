@@ -18,6 +18,24 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
+        /* Skeleton loaders - shimmer animation */
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-shimmer {
+            background: linear-gradient(
+                90deg,
+                rgb(241 245 249) 0%,
+                rgb(226 232 240) 20%,
+                rgb(248 250 252) 40%,
+                rgb(226 232 240) 60%,
+                rgb(248 250 252) 80%,
+                rgb(241 245 249) 100%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.8s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">

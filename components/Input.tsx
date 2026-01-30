@@ -2,7 +2,8 @@ import React, { InputHTMLAttributes, ReactNode } from 'react';
 import classNames from 'classnames';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  label?: string;
+  /** Label text or React node (e.g. icon + text) */
+  label?: React.ReactNode;
   error?: string;
   touched?: boolean;
   leftIcon?: ReactNode;
@@ -15,8 +16,8 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 
 const sizeClasses = {
   sm: 'px-3 py-2 text-sm',
-  md: 'px-4 py-3',
-  lg: 'px-4 py-4 text-lg',
+  md: 'px-4 py-3 text-sm',
+  lg: 'px-4 py-4 text-sm',
 };
 
 const iconPadding = {

@@ -33,7 +33,7 @@ const SidebarItem: React.FC<{
     }`}
   >
     {icon}
-    <span className="font-medium">{label}</span>
+    <span className="font-medium text-sm">{label}</span>
   </Link>
 );
 
@@ -48,13 +48,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, [location.pathname]);
 
   const menuItems = [
-    { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { to: '/members', icon: <Users size={20} />, label: 'Members' },
-    { to: '/defaulters', icon: <AlertTriangle size={20} />, label: 'Defaulters' },
-    { to: '/payments', icon: <CreditCard size={20} />, label: 'Payments' },
-    { to: '/messaging', icon: <MessageSquare size={20} />, label: 'Messaging' },
-    { to: '/celebrations', icon: <Bell size={20} />, label: 'Celebrations' },
-    { to: '/settings', icon: <Settings size={20} />, label: 'Settings' },
+    { to: '/', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
+    { to: '/members', icon: <Users size={16} />, label: 'Members' },
+    { to: '/defaulters', icon: <AlertTriangle size={16} />, label: 'Defaulters' },
+    { to: '/payments', icon: <CreditCard size={16} />, label: 'Payments' },
+    { to: '/messaging', icon: <MessageSquare size={16} />, label: 'Messaging' },
+    { to: '/celebrations', icon: <Bell size={16} />, label: 'Celebrations' },
+    { to: '/settings', icon: <Settings size={16} />, label: 'Settings' },
   ];
 
   return (
@@ -66,7 +66,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div
           onClick={() => setIsOpen((prev) => !prev)}
           className={classNames(
-            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-in-out',
+            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-out',
             {
               'opacity-100': isOpen,
             }
@@ -76,7 +76,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Sidebar */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-out
         lg:translate-x-0 lg:static lg:block
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
@@ -85,10 +85,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="flex items-center justify-between  mb-12">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">S</span>
+                <span className="text-white font-bold text-sm">S</span>
               </div>
               <div>
-                <h1 className="font-bold text-xl tracking-tight text-slate-800">Sperktar</h1>
+                <h1 className="font-bold text-sm tracking-tight text-slate-800">Sperktar</h1>
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
                   SCM Admin
                 </p>
@@ -98,7 +98,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <X
                 className="ext-slate-800 hover:text-cyan-500 transition-colors"
                 strokeWidth={3}
-                size={20}
+                size={16}
               />
             </button>
           </div>
@@ -121,22 +121,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               onClick={() => dispatch(logout())}
               className="flex items-center space-x-3 px-4 py-3 text-slate-500 hover:text-red-500 transition-colors w-full text-left"
             >
-              <LogOut size={20} />
-              <span className="font-medium">Logout</span>
+              <LogOut size={16} />
+              <span className="font-medium text-sm">Logout</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-xl font-semibold text-slate-800">
+      <main className="flex-1 flex flex-col min-h-0 h-screen overflow-hidden w-full">
+        <header className="h-14 sm:h-16 lg:h-20 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0">
+          <h2 className="text-sm font-bold text-slate-800 truncate mr-2">
             {menuItems.find((i) => i.to === location.pathname)?.label || 'Overview'}
           </h2>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button className="p-2 text-slate-400 hover:text-cyan-500 transition-colors relative">
-              <Bell size={22} />
+              <Bell size={16} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden ring-2 ring-slate-100 ring-offset-2">
@@ -151,7 +151,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        <section className="flex-1 overflow-y-auto p-2 md:p-8 bg-slate-50/50">{children}</section>
+        <section className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 bg-slate-50/50 min-h-0">
+          {children}
+        </section>
       </main>
     </div>
   );

@@ -17,15 +17,16 @@ export interface DatePickerProps {
   disabled?: boolean;
   className?: string;
   name?: string;
-  onBlur?: () => void;
+  /** Blur handler (e.g. Formik handleBlur). Called with event when available. */
+  onBlur?: (e?: React.FocusEvent<HTMLElement>) => void;
   minDate?: string;
   maxDate?: string;
 }
 
 const sizeClasses = {
   sm: 'px-3 py-2 text-sm',
-  md: 'px-4 py-3',
-  lg: 'px-4 py-4 text-lg',
+  md: 'px-4 py-3 text-sm',
+  lg: 'px-4 py-4 text-sm',
 };
 
 const iconPadding = {
@@ -77,7 +78,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const hasLeftIcon = !!leftIcon || true; // Always show calendar icon if no leftIcon provided
 
   const selectedDate = React.useMemo(() => (value ? new Date(value) : null), [value]);
-  const displayIcon = leftIcon || <Calendar size={18} />;
+  const displayIcon = leftIcon || <Calendar size={16} />;
 
   // Get calendar days for current month
   const getCalendarDays = () => {
@@ -298,14 +299,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         {isOpen && (
           <div className="absolute z-50 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden w-[320px]">
             {/* Calendar Header */}
-            <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-cyan-50 to-blue-50">
+            <div className="p-4 border-b border-slate-100 bg-linear-to-r from-cyan-50 to-blue-50">
               <div className="flex items-center justify-between mb-4">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
                   className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
                 >
-                  <ChevronLeft size={18} />
+                  <ChevronLeft size={16} />
                 </button>
                 <div className="text-center">
                   <div className="font-bold text-slate-800">
@@ -317,7 +318,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   onClick={handleNextMonth}
                   className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
                 >
-                  <ChevronRight size={18} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
               <button

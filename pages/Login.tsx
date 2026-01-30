@@ -10,17 +10,17 @@ export const Login: React.FC = () => {
   const { handleSubmit, isLoading } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-100 via-slate-50 to-white">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))]  from-cyan-100 via-slate-50 to-white">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-600 rounded-2xl shadow-xl shadow-cyan-200 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-            <ShieldCheck className="text-white" size={32} />
+            <ShieldCheck className="text-white" size={24} />
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Sperktar Admin</h1>
+          <h1 className="text-sm font-extrabold text-slate-900 tracking-tight">Sperktar Admin</h1>
           <p className="text-slate-500 mt-2 font-medium">SCM Nigeria Dues Management Portal</p>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] shadow-2xl shadow-slate-200/60 border border-slate-100">
+        <div className="bg-white p-8 rounded-4xl shadow-2xl shadow-slate-200/60 border border-slate-100">
           <Formik
             initialValues={{ email: '', password: '' }}
             onSubmit={handleSubmit}
@@ -39,7 +39,7 @@ export const Login: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {status && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3">
-                    <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                    <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
                     <p className="text-sm text-red-600 font-medium">{status}</p>
                   </div>
                 )}
@@ -49,7 +49,7 @@ export const Login: React.FC = () => {
                   name="email"
                   label="Email Address"
                   labelClassName="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1"
-                  leftIcon={<Mail size={18} />}
+                  leftIcon={<Mail size={16} />}
                   value={values.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -72,7 +72,7 @@ export const Login: React.FC = () => {
                   <Input
                     type="password"
                     name="password"
-                    leftIcon={<Lock size={18} />}
+                    leftIcon={<Lock size={16} />}
                     value={values.password}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -95,7 +95,7 @@ export const Login: React.FC = () => {
                   )}
                 >
                   <span>{isLoading ? 'Verifying...' : 'Sign In to Dashboard'}</span>
-                  {!isLoading && <ArrowRight size={18} />}
+                  {!isLoading && <ArrowRight size={16} />}
                 </button>
               </form>
             )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Announcement,
   CreateAnnouncementPayload,
@@ -13,9 +13,11 @@ import {
   AnnouncementTargetType,
   AnnouncementType,
   AnnouncementStatus,
+  Member,
 } from '../types';
 import { $api } from '@/api';
 import toast from 'react-hot-toast';
+import { debounce } from '@/utils/debounce';
 
 export type RecipientType = 'defaulters' | 'paid' | 'all' | 'custom';
 export type Channel = 'whatsapp' | 'sms';
@@ -29,6 +31,11 @@ export const useMessaging = () => {
   const [messageHistory, setMessageHistory] = useState<MessageLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [memberSearchResults, setMemberSearchResults] = useState<Member[]>([]);
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
+  const [memberSearchDropdownOpen, setMemberSearchDropdownOpen] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -46,6 +53,49 @@ export const useMessaging = () => {
   });
 
   const isMountedRef = useRef(true);
+
+  // Clear selected member when switching away from Specific Member
+  useEffect(() => {
+    if (recipientType !== 'custom') {
+      setSelectedMember(null);
+      setMemberSearchQuery('');
+      setMemberSearchResults([]);
+      setMemberSearchDropdownOpen(false);
+    }
+  }, [recipientType]);
+
+  const getMembersForSearch = useCallback(async (search: string): Promise<void> => {
+    if (!search.trim()) {
+      setMemberSearchResults([]);
+      return;
+    }
+    setIsSearchingMembers(true);
+    try {
+      const { data } = await $api.members.getMembers({
+        search: search.trim(),
+        page: 1,
+        limit: 20,
+      });
+      setMemberSearchResults(data || []);
+      setMemberSearchDropdownOpen(true);
+    } catch {
+      setMemberSearchResults([]);
+    } finally {
+      setIsSearchingMembers(false);
+    }
+  }, []);
+
+  const debouncedGetMembersForSearch = useRef(
+    debounce((q: string) => getMembersForSearch(q), 300)
+  ).current;
+
+  useEffect(() => {
+    if (recipientType === 'custom' && memberSearchQuery.trim()) {
+      debouncedGetMembersForSearch(memberSearchQuery);
+    } else {
+      setMemberSearchResults([]);
+    }
+  }, [recipientType, memberSearchQuery, debouncedGetMembersForSearch]);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,6 +151,10 @@ export const useMessaging = () => {
       toast.error('Please provide both title and message content');
       return;
     }
+    if (recipientType === 'custom' && !selectedMember) {
+      toast.error('Please search and select a member');
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -118,6 +172,7 @@ export const useMessaging = () => {
         content: message,
         type: 'announcement' as AnnouncementType,
         targetType,
+        targetCollectionIds: targetType === 'custom' && selectedMember ? [selectedMember.id] : undefined,
         channel: channel === 'whatsapp' ? 'whatsapp' : 'sms',
         status: 'draft' as AnnouncementStatus,
       });
@@ -126,6 +181,9 @@ export const useMessaging = () => {
         await sendAnnouncement(announcement.id);
         setMessage('');
         setTitle('');
+        setSelectedMember(null);
+        setMemberSearchQuery('');
+        setMemberSearchResults([]);
         // Refresh data after sending
         try {
           const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
@@ -396,6 +454,14 @@ export const useMessaging = () => {
     messageHistory,
     announcements,
     selectedAnnouncement,
+    selectedMember,
+    setSelectedMember,
+    memberSearchQuery,
+    setMemberSearchQuery,
+    memberSearchResults,
+    isSearchingMembers,
+    memberSearchDropdownOpen,
+    setMemberSearchDropdownOpen,
     isLoadingHistory,
     isLoadingAnnouncements,
     isSending,

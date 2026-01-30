@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import classNames from 'classnames';
+import { TableSkeleton } from './Skeleton';
 
 export interface TableColumn<T extends Record<string, unknown> = Record<string, unknown>> {
   header: string | ReactNode;
@@ -44,7 +45,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
       return column.accessor(row);
     }
     if (column.accessor) {
-      return row[column.accessor];
+      return row[column.accessor] as ReactNode;
     }
     return null;
   };
@@ -63,8 +64,8 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
         containerClassName
       )}
     >
-      <div className="flex-1 overflow-auto min-h-0 scrollbar-hide">
-        <table className={classNames('w-full text-left', className)}>
+      <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 scrollbar-hide -mx-px">
+        <table className={classNames('w-full text-left min-w-[640px] sm:min-w-0', className)}>
           <thead
             className={classNames(
               'bg-slate-50 border-b border-slate-100 sticky top-0 z-10',
@@ -76,7 +77,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
                 <th
                   key={index}
                   className={classNames(
-                    'px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap',
+                    'px-6 sm:px-8 py-4 sm:py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap',
                     {
                       'text-left': column.align === 'left' || !column.align,
                       'text-center': column.align === 'center',
@@ -95,73 +96,21 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
               <>
                 {loadingState ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-6 py-20 text-center">
+                    <td colSpan={columns.length} className="px-3 sm:px-6 py-12 sm:py-20 text-center">
                       {loadingState}
                     </td>
                   </tr>
                 ) : (
-                  [...Array(10)].map((_, index) => (
-                    <tr key={`skeleton-${index}`} className="animate-pulse">
-                      {columns.map((column, colIndex) => {
-                        const align = column.align || 'left';
-                        return (
-                          <td
-                            key={colIndex}
-                            className={classNames(
-                              'px-6 py-4',
-                              {
-                                'text-left': align === 'left',
-                                'text-center': align === 'center',
-                                'text-right': align === 'right',
-                              },
-                              column.className
-                            )}
-                          >
-                            <div
-                              className={classNames('flex items-center', {
-                                'justify-start': align === 'left',
-                                'justify-center': align === 'center',
-                                'justify-end': align === 'right',
-                              })}
-                            >
-                              {colIndex === 0 ? (
-                                // First column - usually has avatar/icon
-                                <div className="flex items-center space-x-3 w-full">
-                                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200"></div>
-                                  <div className="flex-1 space-y-2">
-                                    <div className="h-4 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded w-3/4"></div>
-                                    <div className="h-3 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded w-1/2"></div>
-                                  </div>
-                                </div>
-                              ) : align === 'center' ? (
-                                // Center aligned - usually badges/chips
-                                <div className="h-6 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-full w-16"></div>
-                              ) : align === 'right' ? (
-                                // Right aligned - usually actions/buttons
-                                <div className="flex items-center gap-2">
-                                  <div className="h-8 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-lg w-20"></div>
-                                  <div className="h-8 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-lg w-24"></div>
-                                </div>
-                              ) : (
-                                // Left aligned - usually text content
-                                <div className="space-y-2 w-full">
-                                  <div className="h-4 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded w-full"></div>
-                                  {colIndex === 1 && (
-                                    <div className="h-3 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded w-2/3"></div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
+                  <TableSkeleton
+                    columnCount={columns.length}
+                    rowCount={10}
+                    variant="member"
+                  />
                 )}
               </>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-20 text-center">
+                <td colSpan={columns.length} className="px-3 sm:px-6 py-12 sm:py-20 text-center">
                   {emptyState || (
                     <div className="flex flex-col items-center justify-center">
                       <div className="bg-slate-50 p-4 rounded-full mb-4">
@@ -180,7 +129,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
                           <path d="m21 21-4.35-4.35" />
                         </svg>
                       </div>
-                      <h5 className="font-bold text-slate-800 text-lg">No data found</h5>
+                      <h5 className="font-bold text-slate-800 text-sm">No data found</h5>
                       <p className="text-slate-400 text-sm">Try adjusting your filters.</p>
                     </div>
                   )}
@@ -199,7 +148,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
                     <td
                       key={colIndex}
                       className={classNames(
-                        'px-6 py-4',
+                        'px-6 sm:px-8 py-4 sm:py-5 text-sm',
                         {
                           'text-left': column.align === 'left' || !column.align,
                           'text-center': column.align === 'center',

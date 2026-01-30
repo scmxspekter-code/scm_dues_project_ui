@@ -33,8 +33,8 @@ const StatCard: React.FC<{
         </span>
       )}
     </div>
-    <p className="text-slate-500 text-sm font-medium">{title}</p>
-    <h3 className="text-2xl font-bold text-slate-800 mt-1">{value}</h3>
+    <p className="text-slate-500 text-sm font-bold">{title}</p>
+    <h3 className="text-sm font-bold text-slate-800 mt-1">{value}</h3>
   </div>
 );
 
@@ -103,13 +103,13 @@ export const Dashboard: React.FC = () => {
         ) : (
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-8">
-              <h4 className="font-bold text-slate-800">Dues Collection Trend</h4>
+              <h4 className="font-bold text-slate-800 text-sm">Dues Collection Trend</h4>
               <select
                 value={selectedPeriod}
                 onChange={(e) => {
                   handlePeriodChange(e.target.value as '6months' | 'year');
                 }}
-                className="bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
+                className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 rounded-lg px-3 py-3 outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
               >
                 <option value="6months">Last 6 Months</option>
                 <option value="year">Last Year</option>
@@ -168,7 +168,7 @@ export const Dashboard: React.FC = () => {
           <PieChartSkeleton />
         ) : (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-            <h4 className="font-bold text-slate-800 mb-4">Status Breakdown</h4>
+            <h4 className="font-bold text-slate-800 text-sm mb-4">Status Breakdown</h4>
             <div className="flex-1 relative min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -187,7 +187,7 @@ export const Dashboard: React.FC = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-bold text-slate-800">{stats.collections.total}</span>
+                <span className="text-sm font-bold text-slate-800">{stats.collections.total}</span>
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Total</span>
               </div>
             </div>
@@ -212,8 +212,8 @@ export const Dashboard: React.FC = () => {
       {/* Reports Section */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center justify-between mb-6">
-          <h4 className="font-bold text-slate-800 flex items-center">
-            <FileText className="mr-2 text-cyan-600" size={20} />
+          <h4 className="font-bold text-slate-800 text-sm flex items-center">
+            <FileText className="mr-2 text-cyan-600" size={16} />
             Reports
           </h4>
         </div>
@@ -221,10 +221,10 @@ export const Dashboard: React.FC = () => {
           <button
             onClick={() => handleExportReport('payments')}
             disabled={isExportingReport === 'payments'}
-            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-4 rounded-lg border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between mb-2">
-              <CreditCard size={20} className="text-cyan-600" />
+              <CreditCard size={16} className="text-cyan-600" />
               {isExportingReport === 'payments' && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
               )}
@@ -236,10 +236,10 @@ export const Dashboard: React.FC = () => {
           <button
             onClick={() => handleExportReport('reminders')}
             disabled={isExportingReport === 'reminders'}
-            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-4 rounded-lg border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between mb-2">
-              <AlertCircle size={20} className="text-amber-600" />
+              <AlertCircle size={16} className="text-amber-600" />
               {isExportingReport === 'reminders' && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
               )}
@@ -251,10 +251,10 @@ export const Dashboard: React.FC = () => {
           <button
             onClick={() => handleExportReport('messages')}
             disabled={isExportingReport === 'messages'}
-            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-4 rounded-lg border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between mb-2">
-              <FileText size={20} className="text-blue-600" />
+              <FileText size={16} className="text-blue-600" />
               {isExportingReport === 'messages' && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
               )}
@@ -266,10 +266,10 @@ export const Dashboard: React.FC = () => {
           <button
             onClick={() => handleExportReport('defaulters')}
             disabled={isExportingReport === 'defaulters'}
-            className="p-4 rounded-xl border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-4 rounded-lg border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between mb-2">
-              <Users size={20} className="text-red-600" />
+              <Users size={16} className="text-red-600" />
               {isExportingReport === 'defaulters' && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-600 border-t-transparent" />
               )}

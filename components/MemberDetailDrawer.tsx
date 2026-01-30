@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import gsap from 'gsap';
 import {
   X,
   User,
@@ -7,7 +8,6 @@ import {
   DollarSign,
   CreditCard,
   Bell,
-  Edit,
   MessageSquare,
   History,
   CheckCircle,
@@ -19,18 +19,31 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import classNames from 'classnames';
-import { PaymentStatus, MessageLog, PaymentRecord } from '../types';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { toggleMemberDrawer } from '@/store/slices/membersSlice';
+import { PaymentStatus, MessageLog, PaymentRecord, Member } from '../types';
 import { useMembers } from '@/hooks/useMembers';
 import { CustomSelect } from './CustomSelect';
 import toast from 'react-hot-toast';
-import { EditMemberDrawer } from './EditMemberDrawer';
+import { is } from 'date-fns/locale';
 
-export const MemberDetailDrawer: React.FC = () => {
-  const { member, isDrawerOpen } = useAppSelector((state) => state.members);
-  const dispatch = useAppDispatch();
-  const { sendReminder, getReminderHistory, markAsPaid, getCollectionPayments, getPaymentLink, createPaymentLink } = useMembers();
+interface MemberDetailDrawerProps {
+  member: Member | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
+  member,
+  isOpen: isDrawerOpen,
+  onClose: closeDetailDrawer,
+}) => {
+  const {
+    sendReminder,
+    getReminderHistory,
+    markAsPaid,
+    getCollectionPayments,
+    getPaymentLink,
+    createPaymentLink,
+  } = useMembers();
   const [reminderHistory, setReminderHistory] = useState<MessageLog[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([]);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
@@ -39,8 +52,14 @@ export const MemberDetailDrawer: React.FC = () => {
   const [isLoadingPaymentLink, setIsLoadingPaymentLink] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
-  const [isEditMode, setIsEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'reminders' | 'payments'>('reminders');
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef(false);
+
+  const DURATION = 0.25;
+  const EASE_OUT = 'power2.out';
+  const EASE_IN = 'power2.in';
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -164,9 +183,43 @@ export const MemberDetailDrawer: React.FC = () => {
     });
   };
 
-  const handleClose = (): void => {
-    dispatch(toggleMemberDrawer());
-  };
+  // Set closed state when drawer is closed
+  useEffect(() => {
+    if (!isDrawerOpen && overlayRef.current && panelRef.current) {
+      gsap.set(overlayRef.current, { opacity: 0 });
+      gsap.set(panelRef.current, { x: '100%' });
+    }
+  }, [isDrawerOpen]);
+
+  // Enter animation when drawer opens
+  useEffect(() => {
+    if (!isDrawerOpen || !overlayRef.current || !panelRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(p, { x: '100%' }, { x: 0, duration: DURATION, ease: EASE_OUT });
+  }, [isDrawerOpen]);
+
+  const handleClose = useCallback((): void => {
+    if (isClosingRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) {
+      closeDetailDrawer();
+      return;
+    }
+    isClosingRef.current = true;
+    gsap.to(o, { opacity: 0, duration: DURATION, ease: EASE_IN });
+    gsap.to(p, {
+      x: '100%',
+      duration: DURATION,
+      ease: EASE_IN,
+      onComplete: () => {
+        isClosingRef.current = false;
+        closeDetailDrawer();
+      },
+    });
+  }, [closeDetailDrawer]);
 
   const handleSendReminder = async (): Promise<void> => {
     if (!member) return;
@@ -186,7 +239,7 @@ export const MemberDetailDrawer: React.FC = () => {
     if (!member) return;
     try {
       await markAsPaid(member.id);
-      dispatch(toggleMemberDrawer());
+      handleClose();
     } catch {
       // Error already handled in hook
     }
@@ -196,27 +249,25 @@ export const MemberDetailDrawer: React.FC = () => {
 
   return (
     <>
-      {/* Backdrop - Always rendered for smooth animation */}
+      {/* Backdrop */}
       <div
-        className={classNames(
-          'fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out',
-          {
-            'opacity-100 pointer-events-auto': isDrawerOpen,
-            'opacity-0 pointer-events-none': !isDrawerOpen,
-          }
-        )}
+        ref={overlayRef}
+        className={classNames('fixed inset-0 bg-black/50 z-40', {
+          'pointer-events-auto': isDrawerOpen,
+          'pointer-events-none': !isDrawerOpen,
+        })}
         onClick={handleClose}
         aria-hidden="true"
       />
 
-      {/* Drawer - Always rendered for smooth animation */}
+      {/* Drawer */}
       <div
+        ref={panelRef}
         className={classNames(
-          'fixed inset-y-0 right-0 h-full w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-hidden',
-          'sm:max-w-md lg:max-w-lg xl:max-w-xl',
+          'fixed inset-y-0 right-0 h-full w-full bg-white shadow-2xl z-50 overflow-hidden sm:max-w-md lg:max-w-lg xl:max-w-xl',
           {
-            'translate-x-0': isDrawerOpen,
-            'translate-x-full': !isDrawerOpen,
+            'pointer-events-auto': isDrawerOpen,
+            'pointer-events-none': !isDrawerOpen,
           }
         )}
         role="dialog"
@@ -227,18 +278,18 @@ export const MemberDetailDrawer: React.FC = () => {
         <div className="flex flex-col h-full">
           {/* Header - Responsive */}
           <div className="shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-linear-to-r from-cyan-50 to-blue-50">
-            <div className="grid grid-cols-4items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+            <div className="grid grid-cols-[auto_auto_1fr] items-center gap-2 sm:gap-3 min-w-0 flex-1">
               {/* Mobile back button */}
               <button
                 onClick={handleClose}
                 className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700 shrink-0"
                 aria-label="Close drawer"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={16} />
               </button>
 
               {/* Avatar */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-lg shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shadow-lg shrink-0">
                 {member.name.charAt(0).toUpperCase()}
               </div>
 
@@ -246,7 +297,7 @@ export const MemberDetailDrawer: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <h2
                   id="member-drawer-title"
-                  className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 truncate"
+                  className="text-sm font-bold text-slate-800 truncate"
                 >
                   {member.name}
                 </h2>
@@ -260,7 +311,7 @@ export const MemberDetailDrawer: React.FC = () => {
               className="hidden lg:flex p-2 rounded-lg hover:bg-white/50 transition-colors text-slate-500 hover:text-slate-700 shrink-0"
               aria-label="Close drawer"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </div>
 
@@ -272,21 +323,13 @@ export const MemberDetailDrawer: React.FC = () => {
                 <div className="grid gap-2">
                   <div
                     className={classNames(
-                      'flex  items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border font-bold text-sm sm:text-base w-full sm:w-auto',
+                      'flex  items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border font-bold text-sm w-full sm:w-auto',
                       getStatusColor(member.paymentStatus || PaymentStatus.PENDING)
                     )}
                   >
                     {getStatusIcon(member.paymentStatus || PaymentStatus.PENDING)}
                     <span className="capitalize">{member.paymentStatus}</span>
                   </div>
-                  {/* Edit Button - Hidden on mobile, shown on desktop */}
-                  <button
-                    onClick={() => setIsEditMode(true)}
-                    className="hidden sm:flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium text-sm sm:text-base"
-                  >
-                    <Edit size={16} />
-                    <span>Edit</span>
-                  </button>
                 </div>
                 {/* Action Buttons - Stack on mobile, horizontal on desktop */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
@@ -308,7 +351,7 @@ export const MemberDetailDrawer: React.FC = () => {
                     <button
                       onClick={handleSendReminder}
                       disabled={isSending}
-                      className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg sm:rounded-xl transition-colors text-white font-medium shadow-lg shadow-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                      className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg sm:rounded-xl transition-colors text-white font-medium shadow-lg shadow-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       <MessageSquare size={16} />
                       <span className="whitespace-nowrap">
@@ -321,18 +364,18 @@ export const MemberDetailDrawer: React.FC = () => {
 
               {/* Basic Information */}
               <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800">Basic Information</h3>
+                <h3 className="text-sm font-bold text-slate-800">Basic Information</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">
-                      <User className="text-cyan-600" size={18} />
+                      <User className="text-cyan-600" size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                         Full Name
                       </p>
-                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1 wrap-break-words">
+                      <p className="text-sm text-slate-800 font-semibold mt-1 wrap-break-words">
                         {member.name}
                       </p>
                     </div>
@@ -340,7 +383,7 @@ export const MemberDetailDrawer: React.FC = () => {
 
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">
-                      <Phone className="text-cyan-600" size={18} />
+                      <Phone className="text-cyan-600" size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -348,7 +391,7 @@ export const MemberDetailDrawer: React.FC = () => {
                       </p>
                       <a
                         href={`tel:${member.phoneNumber}`}
-                        className="text-sm sm:text-base text-slate-800 font-semibold mt-1 hover:text-cyan-600 transition-colors break-all"
+                        className="text-sm text-slate-800 font-semibold mt-1 hover:text-cyan-600 transition-colors break-all"
                       >
                         {member.phoneNumber}
                       </a>
@@ -357,13 +400,13 @@ export const MemberDetailDrawer: React.FC = () => {
 
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">
-                      <Calendar className="text-cyan-600" size={18} />
+                      <Calendar className="text-cyan-600" size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                         Due Date
                       </p>
-                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                      <p className="text-sm text-slate-800 font-semibold mt-1">
                         {formatDate(member.dueDate)}
                       </p>
                     </div>
@@ -372,13 +415,13 @@ export const MemberDetailDrawer: React.FC = () => {
                   {member.dob && (
                     <div className="flex items-start space-x-3">
                       <div className="p-2 bg-white rounded-lg shrink-0">
-                        <Calendar className="text-cyan-600" size={18} />
+                        <Calendar className="text-cyan-600" size={16} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                           Date of Birth
                         </p>
-                        <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                        <p className="text-sm text-slate-800 font-semibold mt-1">
                           {formatDate(member.dob)}
                         </p>
                       </div>
@@ -388,13 +431,13 @@ export const MemberDetailDrawer: React.FC = () => {
                   {member.anniversary && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
                       <div className="p-2 bg-white rounded-lg shrink-0">
-                        <Calendar className="text-cyan-600" size={18} />
+                        <Calendar className="text-cyan-600" size={16} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                           Anniversary
                         </p>
-                        <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1">
+                        <p className="text-sm text-slate-800 font-semibold mt-1">
                           {formatDate(member.anniversary)}
                         </p>
                       </div>
@@ -405,20 +448,20 @@ export const MemberDetailDrawer: React.FC = () => {
 
               {/* Payment Information */}
               <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800">
+                <h3 className="text-sm font-bold text-slate-800">
                   Payment Information
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">
-                      <DollarSign className="text-cyan-600" size={18} />
+                      <DollarSign className="text-cyan-600" size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                         Amount Due
                       </p>
-                      <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-1">
+                      <p className="text-sm font-bold text-slate-800 mt-1">
                         ₦{member.amount.toLocaleString()}
                       </p>
                     </div>
@@ -426,13 +469,13 @@ export const MemberDetailDrawer: React.FC = () => {
 
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">
-                      <Bell className="text-cyan-600" size={18} />
+                      <Bell className="text-cyan-600" size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                         Reminder Frequency
                       </p>
-                      <p className="text-sm sm:text-base text-slate-800 font-semibold mt-1 capitalize">
+                      <p className="text-sm text-slate-800 font-semibold mt-1 capitalize">
                         {member.reminderFrequency}
                       </p>
                     </div>
@@ -505,8 +548,8 @@ export const MemberDetailDrawer: React.FC = () => {
               {/* History Section with Tabs */}
               <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
-                    <History className="text-cyan-600" size={18} />
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                    <History className="text-cyan-600" size={16} />
                     <span>History</span>
                   </h3>
                   {/* Tab Switcher */}
@@ -540,7 +583,7 @@ export const MemberDetailDrawer: React.FC = () => {
                 {activeTab === 'reminders' && (
                   <>
                     {isLoadingHistory ? (
-                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
                         Loading reminder history...
                       </div>
                     ) : reminderHistory.length > 0 ? (
@@ -552,7 +595,7 @@ export const MemberDetailDrawer: React.FC = () => {
                           >
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm sm:text-base text-slate-800 font-medium wrap-break-words">
+                                <p className="text-sm text-slate-800 font-medium wrap-break-words">
                                   {reminder.content}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
@@ -588,7 +631,7 @@ export const MemberDetailDrawer: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
                         No reminders sent yet. Send a reminder to see history here.
                       </div>
                     )}
@@ -599,7 +642,7 @@ export const MemberDetailDrawer: React.FC = () => {
                 {activeTab === 'payments' && (
                   <>
                     {isLoadingPayments ? (
-                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
                         Loading payment history...
                       </div>
                     ) : paymentHistory.length > 0 ? (
@@ -612,7 +655,7 @@ export const MemberDetailDrawer: React.FC = () => {
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-2">
-                                  <p className="text-sm sm:text-base text-slate-800 font-bold">
+                                  <p className="text-sm text-slate-800 font-bold">
                                     ₦{payment.amount.toLocaleString()}
                                   </p>
                                   <span
@@ -656,7 +699,7 @@ export const MemberDetailDrawer: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm sm:text-base">
+                      <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
                         No payment history available yet.
                       </div>
                     )}
@@ -666,7 +709,7 @@ export const MemberDetailDrawer: React.FC = () => {
 
               {/* Quick Actions */}
               <div className="bg-linear-to-r from-cyan-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-4">
+                <h3 className="text-sm font-bold text-slate-800 mb-4">
                   Quick Actions
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -678,16 +721,16 @@ export const MemberDetailDrawer: React.FC = () => {
                         fetchPaymentHistory();
                       }
                     }}
-                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm sm:text-base"
+                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm"
                   >
-                    <History size={18} />
+                    <History size={16} />
                     <span>Refresh History</span>
                   </button>
                   <button
                     onClick={handleMarkAsPaid}
-                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm sm:text-base"
+                    className="flex items-center justify-center space-x-2 p-3 bg-white hover:bg-cyan-50 rounded-lg sm:rounded-xl transition-colors text-slate-700 font-medium border border-slate-200 text-sm"
                   >
-                    <CreditCard size={18} />
+                    <CreditCard size={16} />
                     <span>Mark as Paid</span>
                   </button>
                 </div>
@@ -696,9 +739,6 @@ export const MemberDetailDrawer: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Edit Member Drawer */}
-      <EditMemberDrawer isOpen={isEditMode} onClose={() => setIsEditMode(false)} />
     </>
   );
 };

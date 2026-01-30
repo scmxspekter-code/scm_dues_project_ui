@@ -22,8 +22,8 @@ export interface NumberInputProps extends Omit<
 
 const sizeClasses = {
   sm: 'px-3 py-2 text-sm',
-  md: 'px-4 py-3',
-  lg: 'px-4 py-4 text-lg',
+  md: 'px-4 py-3 text-sm',
+  lg: 'px-4 py-4 text-sm',
 };
 
 const iconPadding = {

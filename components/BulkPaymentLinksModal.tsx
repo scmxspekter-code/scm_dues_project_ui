@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { X, Link2, CheckCircle2, AlertCircle } from 'lucide-react';
 import classNames from 'classnames';
 import { Member } from '@/types';
@@ -11,6 +12,10 @@ interface BulkPaymentLinksModalProps {
   isCreating: boolean;
 }
 
+const DURATION = 0.25;
+const EASE_OUT = 'power2.out';
+const EASE_IN = 'power2.in';
+
 export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
   isOpen,
   onClose,
@@ -19,6 +24,40 @@ export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
   isCreating,
 }) => {
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) return;
+    gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) {
+      onClose();
+      return;
+    }
+    isClosingRef.current = true;
+    gsap.to(o, { opacity: 0, duration: DURATION, ease: EASE_IN });
+    gsap.to(p, {
+      scale: 0.95,
+      opacity: 0,
+      duration: DURATION,
+      ease: EASE_IN,
+      onComplete: () => {
+        isClosingRef.current = false;
+        onClose();
+      },
+    });
+  }, [onClose]);
 
   const handleToggleMember = (id: string): void => {
     const newSet = new Set(selectedMemberIds);
@@ -44,59 +83,39 @@ export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
     }
     await onCreate(Array.from(selectedMemberIds));
     setSelectedMemberIds(new Set());
-    onClose();
+    handleClose();
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className={classNames(
-          'fixed inset-0 bg-black/50 z-50 transition-opacity duration-300',
-          {
-            'opacity-100': isOpen,
-            'opacity-0 pointer-events-none': !isOpen,
-          }
-        )}
-        onClick={onClose}
+        ref={overlayRef}
+        className="fixed inset-0 bg-black/50 z-50 pointer-events-auto"
+        onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div
-        className={classNames(
-          'fixed inset-0 z-50 flex items-center justify-center p-4',
-          {
-            'pointer-events-auto': isOpen,
-            'pointer-events-none': !isOpen,
-          }
-        )}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className={classNames(
-            'bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col transform transition-all duration-300',
-            {
-              'scale-100 opacity-100': isOpen,
-              'scale-95 opacity-0': !isOpen,
-            }
-          )}
+          ref={panelRef}
+          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6 flex-shrink-0 border-b border-slate-200">
+          <div className="p-6 shrink-0 border-b border-slate-200">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Create Bulk Payment Links</h3>
+                <h3 className="text-sm font-bold text-slate-800">Create Bulk Payment Links</h3>
                 <p className="text-sm text-slate-500 mt-1">
                   Select members to create payment links for
                 </p>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
           </div>
@@ -145,7 +164,7 @@ export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
                         </div>
                       </div>
                       {isSelected ? (
-                        <CheckCircle2 size={20} className="text-cyan-600" />
+                        <CheckCircle2 size={16} className="text-cyan-600" />
                       ) : (
                         <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
                       )}
@@ -157,16 +176,16 @@ export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
 
             {members.length === 0 && (
               <div className="py-12 text-center">
-                <AlertCircle size={48} className="text-slate-300 mx-auto mb-4" />
+                <AlertCircle size={16} className="text-slate-300 mx-auto mb-4" />
                 <p className="text-slate-400 font-medium">No members available</p>
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex space-x-3 p-6 border-t border-slate-200 flex-shrink-0">
+          <div className="flex space-x-3 p-6 border-t border-slate-200 shrink-0">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isCreating}
               className="flex-1 px-6 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -177,7 +196,7 @@ export const BulkPaymentLinksModal: React.FC<BulkPaymentLinksModalProps> = ({
               disabled={isCreating || selectedMemberIds.size === 0}
               className="flex-1 px-6 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
-              <Link2 size={18} />
+              <Link2 size={16} />
               <span>
                 {isCreating
                   ? 'Creating...'

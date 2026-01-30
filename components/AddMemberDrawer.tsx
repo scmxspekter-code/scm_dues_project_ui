@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import gsap from 'gsap';
 import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
 import { Formik, FormikProps } from 'formik';
 import classNames from 'classnames';
@@ -20,9 +22,16 @@ interface MemberFormValues {
   reminderFrequency: ReminderFrequency;
 }
 
+const DURATION = 0.25;
+const EASE_OUT = 'power2.out';
+const EASE_IN = 'power2.in';
+
 export const AddMemberDrawer: React.FC = () => {
   const { createMember, isAddMemberDrawerOpen, closeAddMemberDrawer } = useMembers();
   const isOpen = isAddMemberDrawerOpen;
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef(false);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -36,6 +45,37 @@ export const AddMemberDrawer: React.FC = () => {
     };
   }, [isOpen]);
 
+  // Enter animation
+  useEffect(() => {
+    if (!isOpen) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) return;
+    gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(p, { x: '100%' }, { x: 0, duration: DURATION, ease: EASE_OUT });
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) {
+      closeAddMemberDrawer();
+      return;
+    }
+    isClosingRef.current = true;
+    gsap.to(o, { opacity: 0, duration: DURATION, ease: EASE_IN });
+    gsap.to(p, {
+      x: '100%',
+      duration: DURATION,
+      ease: EASE_IN,
+      onComplete: () => {
+        isClosingRef.current = false;
+        closeAddMemberDrawer();
+      },
+    });
+  }, [closeAddMemberDrawer]);
+
   const initialValues = {
     name: '',
     phoneNumber: '',
@@ -46,43 +86,38 @@ export const AddMemberDrawer: React.FC = () => {
     reminderFrequency: ReminderFrequency.MONTHLY,
   };
 
-  return (
+  if (!isOpen) return null;
+
+  const overlay = (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className={classNames(
-            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity',
-            {
-              'opacity-100 ': isOpen,
-            }
-          )}
-          onClick={closeAddMemberDrawer}
-        />
-      )}
+      {/* Backdrop - covers full viewport when portaled to body */}
+      <div
+        ref={overlayRef}
+        className="fixed inset-0 bg-black/50 pointer-events-auto"
+        style={{ zIndex: 9998 }}
+        onClick={handleClose}
+        aria-hidden={!isOpen}
+      />
 
       {/* Drawer */}
       <div
-        className={classNames(
-          'fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto',
-          {
-            'translate-x-0': isOpen,
-            'translate-x-full': !isOpen,
-          }
-        )}
+        ref={panelRef}
+        className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl overflow-y-auto"
+        style={{ zIndex: 9999 }}
+        aria-hidden={!isOpen}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Add New Member</h2>
+              <h2 className="text-sm font-bold text-slate-800">Add New Member</h2>
               <p className="text-sm text-slate-500 mt-1">Fill in the member details below</p>
             </div>
             <button
-              onClick={closeAddMemberDrawer}
+              onClick={handleClose}
               className="p-2 rounded-lg hover:bg-slate-200 transition-colors text-slate-500 hover:text-slate-700"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </div>
 
@@ -274,4 +309,5 @@ export const AddMemberDrawer: React.FC = () => {
       </div>
     </>
   );
+  return createPortal(overlay, document.body);
 };

@@ -1,7 +1,12 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import gsap from 'gsap';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useDefaulters } from '@/hooks/useDefaulters';
+
+const DURATION = 0.25;
+const EASE_OUT = 'power2.out';
+const EASE_IN = 'power2.in';
 
 export const DefaulterActionModal: React.FC = () => {
   const { member, isDrawerOpen } = useAppSelector((state) => state.defaulters);
@@ -19,6 +24,41 @@ export const DefaulterActionModal: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'history' | 'message'>('history');
   const [customMsg, setCustomMsg] = useState('');
   const prevMemberIdRef = useRef<string | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef(false);
+
+  // Enter animation
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) return;
+    gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+  }, [isDrawerOpen]);
+
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    const o = overlayRef.current;
+    const p = panelRef.current;
+    if (!o || !p) {
+      toggleDefaulterDrawer();
+      return;
+    }
+    isClosingRef.current = true;
+    gsap.to(o, { opacity: 0, duration: DURATION, ease: EASE_IN });
+    gsap.to(p, {
+      scale: 0.95,
+      opacity: 0,
+      duration: DURATION,
+      ease: EASE_IN,
+      onComplete: () => {
+        isClosingRef.current = false;
+        toggleDefaulterDrawer();
+      },
+    });
+  }, [toggleDefaulterDrawer]);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -59,36 +99,36 @@ export const DefaulterActionModal: React.FC = () => {
     if (!member) return;
     try {
       await sendReminderToDefaulter(member.id, selectedChannel);
-      toggleDefaulterDrawer();
+      handleClose();
     } catch {
       // Error already handled in hook
     }
   };
 
-  const handleClose = (): void => {
-    toggleDefaulterDrawer();
-  };
-
   if (!isDrawerOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 pointer-events-none">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        ref={overlayRef}
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto"
         onClick={handleClose}
-      ></div>
+      />
 
       {/* Modal */}
-      <div className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden">
+      <div
+        ref={panelRef}
+        className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden pointer-events-auto"
+      >
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-bold text-xl">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm">
               {member?.name?.charAt(0)}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">{member?.name}</h3>
+              <h3 className="text-sm font-bold text-slate-900">{member?.name}</h3>
               <p className="text-sm text-slate-500 font-medium">
                 Owes ₦{member?.amount.toLocaleString()}
               </p>
@@ -98,7 +138,7 @@ export const DefaulterActionModal: React.FC = () => {
             onClick={handleClose}
             className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
         </div>
 
@@ -221,7 +261,7 @@ export const DefaulterActionModal: React.FC = () => {
                 className="w-full p-5 bg-slate-50 border border-slate-200 rounded-3xl focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 font-medium text-slate-700 resize-none transition-all"
               />
               <div className="flex items-center space-x-2 p-3 bg-amber-50 rounded-2xl border border-amber-100">
-                <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
+                <AlertCircle size={16} className="text-amber-500 shrink-0" />
                 <p className="text-[10px] text-amber-700 font-bold uppercase leading-tight">
                   Message will be sent to {member?.phoneNumber} via {selectedChannel.toUpperCase()}{' '}
                   as primary channel.
@@ -245,7 +285,7 @@ export const DefaulterActionModal: React.FC = () => {
               disabled={isSendingReminder || !member}
               className="px-8 py-3 bg-cyan-600 text-white rounded-2xl font-bold flex items-center space-x-2 hover:bg-cyan-700 shadow-lg shadow-cyan-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send size={18} />
+              <Send size={16} />
               <span>{isSendingReminder ? 'Sending...' : 'Send Now'}</span>
             </button>
           )}

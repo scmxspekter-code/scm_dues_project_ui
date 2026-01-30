@@ -3,7 +3,7 @@ import { Search, Download, Filter, Calendar, Loader2, CheckCircle, XCircle, Cloc
 import { usePayments } from '@/hooks/usePayments';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
-import { Table } from '../components/Table';
+import { Table } from '@/components/Table';
 import { PaymentRecord } from '../types';
 import { formatDate } from 'date-fns';
 import classNames from 'classnames';
@@ -58,19 +58,19 @@ export const Payments: React.FC = () => {
           <Input
             type="text"
             placeholder="Search payments by payer name, email, or reference..."
-            leftIcon={<Search size={18} />}
+            leftIcon={<Search size={16} />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             size="md"
-            className="bg-white border-slate-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/10"
+            className="bg-white border-slate-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 text-sm"
             containerClassName="space-y-0"
           />
         </div>
         <div className="flex items-center space-x-3">
           <Dropdown
             trigger={
-              <button className="flex items-center space-x-2 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-600 font-medium">
-                <Filter size={18} />
+              <button className="flex items-center space-x-2 px-3 py-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-600 font-bold text-sm shadow-sm">
+                <Filter size={16} />
                 <span>Filter</span>
               </button>
             }
@@ -97,16 +97,16 @@ export const Payments: React.FC = () => {
           <button
             onClick={exportPayments}
             disabled={apiState.exportPayments}
-            className="flex items-center space-x-2 px-6 py-3 border border-slate-200 bg-white rounded-2xl hover:bg-slate-50 transition-colors text-slate-700 font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center space-x-2 px-3 py-3 border border-slate-200 bg-white rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {apiState.exportPayments ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
                 <span>Exporting...</span>
               </>
             ) : (
               <>
-                <Download size={18} />
+                <Download size={16} />
                 <span>Export CSV</span>
               </>
             )}
@@ -114,17 +114,18 @@ export const Payments: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col flex-1 min-h-0">
         <Table<PaymentRecord>
           columns={[
             {
               header: 'Payment Details',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-800">
+                  <div className="font-bold text-slate-800 text-sm">
                     ₦{payment.amount.toLocaleString()}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-500 font-medium">
                     {payment.payerName || payment.payerEmail || 'N/A'}
                   </div>
                   {payment.providerReference && (
@@ -137,18 +138,21 @@ export const Payments: React.FC = () => {
             },
             {
               header: 'Provider',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <span className="font-medium text-slate-700 capitalize">{payment.provider}</span>
               ),
             },
             {
               header: 'Method',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <span className="text-sm text-slate-600 capitalize">{payment.paymentMethod}</span>
               ),
             },
             {
               header: 'Status',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(payment.status)}
@@ -165,6 +169,7 @@ export const Payments: React.FC = () => {
             },
             {
               header: 'Date',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-slate-800">
@@ -178,6 +183,7 @@ export const Payments: React.FC = () => {
             },
             {
               header: 'Fee',
+              headerClassName: 'px-8 py-5 text-[10px]',
               accessor: (payment) => (
                 <span className="text-sm text-slate-600">
                   {payment.fee > 0 ? `₦${payment.fee.toLocaleString()}` : 'N/A'}
@@ -188,12 +194,15 @@ export const Payments: React.FC = () => {
           data={payments}
           isLoading={apiState.getPayments}
           emptyState={
-            <div className="py-12 text-center">
-              <p className="text-slate-400 italic font-medium">No payment records found</p>
-              <p className="text-xs text-slate-400 mt-2">
+            <div className="py-20 text-center flex flex-col items-center">
+              <div className="bg-slate-50 p-4 rounded-full mb-4">
+                <Search className="text-slate-300" size={16} />
+              </div>
+              <h5 className="font-bold text-slate-800 text-sm">No payment records found</h5>
+              <p className="text-slate-400 text-sm mt-1">
                 {searchTerm || statusFilter
-                  ? 'Try adjusting your filters'
-                  : 'Payment records will appear here once payments are processed'}
+                  ? 'Try adjusting your filters.'
+                  : 'Payment records will appear here once payments are processed.'}
               </p>
             </div>
           }
