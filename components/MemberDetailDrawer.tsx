@@ -23,8 +23,6 @@ import { PaymentStatus, MessageLog, PaymentRecord, Member } from '../types';
 import { useMembers } from '@/hooks/useMembers';
 import { CustomSelect } from './CustomSelect';
 import toast from 'react-hot-toast';
-import { is } from 'date-fns/locale';
-
 interface MemberDetailDrawerProps {
   member: Member | null;
   isOpen: boolean;
@@ -295,10 +293,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
               {/* Name and subtitle */}
               <div className="min-w-0 flex-1">
-                <h2
-                  id="member-drawer-title"
-                  className="text-sm font-bold text-slate-800 truncate"
-                >
+                <h2 id="member-drawer-title" className="text-sm font-bold text-slate-800 truncate">
                   {member.name}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Member Profile</p>
@@ -448,9 +443,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
               {/* Payment Information */}
               <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4">
-                <h3 className="text-sm font-bold text-slate-800">
-                  Payment Information
-                </h3>
+                <h3 className="text-sm font-bold text-slate-800">Payment Information</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="flex items-start space-x-3">
@@ -533,7 +526,10 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                         <div className="flex items-center space-x-4 text-xs text-slate-500">
                           <span>Status: Active</span>
                           <span>•</span>
-                          <span>Payments: {paymentHistory.filter((p) => p.status === 'successful').length}</span>
+                          <span>
+                            Payments:{' '}
+                            {paymentHistory.filter((p) => p.status === 'successful').length}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -673,14 +669,18 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
                                   <span className="text-[10px] sm:text-xs text-slate-500">
-                                    <span className="font-medium">Provider:</span> {payment.provider}
+                                    <span className="font-medium">Provider:</span>{' '}
+                                    {payment.provider}
                                   </span>
                                   <span className="text-[10px] sm:text-xs text-slate-500">
-                                    <span className="font-medium">Method:</span> {payment.paymentMethod}
+                                    <span className="font-medium">Method:</span>{' '}
+                                    {payment.paymentMethod}
                                   </span>
                                   <span className="text-[10px] sm:text-xs text-slate-500 flex items-center space-x-1">
                                     <Calendar size={12} />
-                                    <span>{formatDate(payment.paymentDate || payment.createdAt)}</span>
+                                    <span>
+                                      {formatDate(payment.paymentDate || payment.createdAt)}
+                                    </span>
                                   </span>
                                 </div>
                                 {payment.payerName && (
@@ -690,7 +690,8 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                                 )}
                                 {payment.fee > 0 && (
                                   <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
-                                    <span className="font-medium">Fee:</span> ₦{payment.fee.toLocaleString()}
+                                    <span className="font-medium">Fee:</span> ₦
+                                    {payment.fee.toLocaleString()}
                                   </p>
                                 )}
                               </div>
@@ -709,9 +710,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
               {/* Quick Actions */}
               <div className="bg-linear-to-r from-cyan-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                <h3 className="text-sm font-bold text-slate-800 mb-4">
-                  Quick Actions
-                </h3>
+                <h3 className="text-sm font-bold text-slate-800 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <button
                     onClick={() => {

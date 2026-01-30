@@ -35,7 +35,11 @@ export const DefaulterActionModal: React.FC = () => {
     const p = panelRef.current;
     if (!o || !p) return;
     gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
-    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(
+      p,
+      { scale: 0.95, opacity: 0 },
+      { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT }
+    );
   }, [isDrawerOpen]);
 
   const handleClose = useCallback(() => {

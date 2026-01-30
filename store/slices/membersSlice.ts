@@ -58,11 +58,6 @@ const membersSlice = createSlice({
   },
 });
 
-export const {
-  setSearchTerm,
-  addMember,
-  setMembers,
-  updateMember,
-  toggleAddMember,
-} = membersSlice.actions;
+export const { setSearchTerm, addMember, setMembers, updateMember, toggleAddMember } =
+  membersSlice.actions;
 export default membersSlice.reducer;

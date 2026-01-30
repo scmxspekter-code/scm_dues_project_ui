@@ -185,7 +185,10 @@ export const useMembers = () => {
     }
   };
 
-  const createMember = async (payload: ICreateMemberPayload,helpers:FormikHelpers<ICreateMemberPayload>): Promise<void> => {
+  const createMember = async (
+    payload: ICreateMemberPayload,
+    helpers: FormikHelpers<ICreateMemberPayload>
+  ): Promise<void> => {
     try {
       setApiState((prev) => ({ ...prev, createMember: true }));
       const newPayload = { ...payload, phoneNumber: payload.phoneNumber.replace(/^0/, '+234') };

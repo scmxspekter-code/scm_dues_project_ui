@@ -42,7 +42,6 @@ export const Dashboard: React.FC = () => {
   const {
     COLORS,
     apiState,
-    getChartData,
     selectedPeriod,
     handlePeriodChange,
     isExportingReport,

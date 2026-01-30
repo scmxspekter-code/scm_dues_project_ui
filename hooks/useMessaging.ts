@@ -140,10 +140,8 @@ export const useMessaging = () => {
     loadData();
 
     return () => {
-      isMounted = false;
       isMountedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSend = async (): Promise<void> => {
@@ -172,7 +170,8 @@ export const useMessaging = () => {
         content: message,
         type: 'announcement' as AnnouncementType,
         targetType,
-        targetCollectionIds: targetType === 'custom' && selectedMember ? [selectedMember.id] : undefined,
+        targetCollectionIds:
+          targetType === 'custom' && selectedMember ? [selectedMember.id] : undefined,
         channel: channel === 'whatsapp' ? 'whatsapp' : 'sms',
         status: 'draft' as AnnouncementStatus,
       });

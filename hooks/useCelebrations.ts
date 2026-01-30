@@ -51,7 +51,6 @@ export const useCelebrations = () => {
 
   // Load initial data effect
   useEffect(() => {
-    let isMounted = true;
     isMountedRef.current = true;
 
     const fetchData = async (): Promise<void> => {
@@ -64,7 +63,6 @@ export const useCelebrations = () => {
     fetchData();
 
     return () => {
-      isMounted = false;
       isMountedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

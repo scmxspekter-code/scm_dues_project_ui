@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
-import { Formik, FormikProps } from 'formik';
-import classNames from 'classnames';
+import { Formik } from 'formik';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
 import { CustomSelect } from './CustomSelect';
@@ -11,16 +10,6 @@ import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
 import { memberSchema } from '@/schemas/member.schema';
 import { Currency, PaymentStatus, ReminderFrequency } from '@/types';
-
-interface MemberFormValues {
-  name: string;
-  phoneNumber: string;
-  amount: number | null;
-  currency: Currency;
-  dueDate: string;
-  paymentStatus: PaymentStatus;
-  reminderFrequency: ReminderFrequency;
-}
 
 const DURATION = 0.25;
 const EASE_OUT = 'power2.out';

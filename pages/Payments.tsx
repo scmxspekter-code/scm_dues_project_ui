@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Download, Filter, Calendar, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, Download, Filter, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { usePayments } from '@/hooks/usePayments';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
@@ -15,12 +15,6 @@ export const Payments: React.FC = () => {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
-    dateRange,
-    setDateRange,
-    currentPage,
-    itemsPerPage,
-    handlePageChange,
-    handleItemsPerPageChange,
     apiState,
     exportPayments,
   } = usePayments();
@@ -207,7 +201,7 @@ export const Payments: React.FC = () => {
             </div>
           }
           loadingState={undefined}
-          onRowClick={(payment) => {
+          onRowClick={(_payment) => {
             // Could navigate to member detail or payment detail
           }}
           rowClassName="hover:bg-slate-50/50 transition-colors cursor-pointer"

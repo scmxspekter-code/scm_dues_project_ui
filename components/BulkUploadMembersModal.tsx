@@ -1,20 +1,23 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { X, Upload, Download, CheckCircle2, AlertCircle, FileSpreadsheet, Trash2, Plus } from 'lucide-react';
-import classNames from 'classnames';
 import {
-  ICreateMemberPayload,
-  Currency,
-  PaymentStatus,
-  ReminderFrequency,
-} from '@/types';
+  X,
+  Upload,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  FileSpreadsheet,
+  Trash2,
+  Plus,
+} from 'lucide-react';
+import classNames from 'classnames';
+import { ICreateMemberPayload, Currency, PaymentStatus, ReminderFrequency } from '@/types';
 import { Input } from './Input';
 import { NumberInput } from './NumberInput';
 import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 
-const CSV_HEADERS =
-  'name,phoneNumber,amount,currency,dueDate,paymentStatus,reminderFrequency';
+const CSV_HEADERS = 'name,phoneNumber,amount,currency,dueDate,paymentStatus,reminderFrequency';
 
 const SAMPLE_CSV = `${CSV_HEADERS}
 John Doe,+2348012345678,5000,NGN,2024-12-31,pending,monthly
@@ -65,7 +68,8 @@ function parseRow(row: string[], index: number): ParsedRow {
   const ps = (paymentStatus?.toLowerCase() || 'pending') as PaymentStatus;
   if (!['pending', 'paid', 'failed'].includes(ps)) errors.push('Invalid payment status');
   const rf = (reminderFrequency?.toLowerCase() || 'monthly') as ReminderFrequency;
-  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(rf)) errors.push('Invalid reminder frequency');
+  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(rf))
+    errors.push('Invalid reminder frequency');
 
   if (errors.length > 0) {
     return { index, data: null, error: errors.join('; ') };
@@ -133,8 +137,10 @@ function validateRow(row: EditableMemberRow): string | null {
   if (Number.isNaN(amount) || amount < 0) err.push('Valid amount is required');
   if (row.currency !== Currency.NGN) err.push('Currency must be NGN');
   if (!row.dueDate?.trim()) err.push('Due date is required');
-  if (!['pending', 'paid', 'failed'].includes(row.paymentStatus)) err.push('Invalid payment status');
-  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(row.reminderFrequency)) err.push('Invalid reminder frequency');
+  if (!['pending', 'paid', 'failed'].includes(row.paymentStatus))
+    err.push('Invalid payment status');
+  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(row.reminderFrequency))
+    err.push('Invalid reminder frequency');
   return err.length > 0 ? err.join('; ') : null;
 }
 
@@ -176,7 +182,11 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
     const p = panelRef.current;
     if (!o || !p) return;
     gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
-    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(
+      p,
+      { scale: 0.95, opacity: 0 },
+      { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT }
+    );
   }, [isOpen]);
 
   const handleDownloadSample = useCallback(() => {
@@ -189,38 +199,42 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
     URL.revokeObjectURL(url);
   }, []);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = e.target.files?.[0];
-      if (!selectedFile) return;
-      if (!selectedFile.name.endsWith('.csv')) {
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    if (!selectedFile.name.endsWith('.csv')) {
+      return;
+    }
+    setFile(selectedFile);
+    setFileName(selectedFile.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result);
+      const rows = parseCSV(text);
+      if (rows.length < 2) {
+        setEditableRows([]);
         return;
       }
-      setFile(selectedFile);
-      setFileName(selectedFile.name);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const text = String(reader.result);
-        const rows = parseCSV(text);
-        if (rows.length < 2) {
-          setEditableRows([]);
-          return;
-        }
-        const dataRows = rows.slice(1);
-        const parsed = dataRows.map((row, i) => parseRow(row, i + 2));
-        setEditableRows(parsedToEditable(parsed));
-      };
-      reader.readAsText(selectedFile);
-      e.target.value = '';
+      const dataRows = rows.slice(1);
+      const parsed = dataRows.map((row, i) => parseRow(row, i + 2));
+      setEditableRows(parsedToEditable(parsed));
+    };
+    reader.readAsText(selectedFile);
+    e.target.value = '';
+  }, []);
+
+  const updateRow = useCallback(
+    (
+      rowId: string,
+      field: keyof EditableMemberRow,
+      value: string | Currency | PaymentStatus | ReminderFrequency
+    ) => {
+      setEditableRows((prev) =>
+        prev.map((r) => (r.id === rowId ? { ...r, [field]: value, parseError: undefined } : r))
+      );
     },
     []
   );
-
-  const updateRow = useCallback((rowId: string, field: keyof EditableMemberRow, value: string | Currency | PaymentStatus | ReminderFrequency) => {
-    setEditableRows((prev) =>
-      prev.map((r) => (r.id === rowId ? { ...r, [field]: value, parseError: undefined } : r))
-    );
-  }, []);
 
   const removeRow = useCallback((rowId: string) => {
     setEditableRows((prev) => prev.filter((r) => r.id !== rowId));
@@ -329,12 +343,7 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
               <label className="inline-flex items-center justify-center space-x-2 px-4 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 font-medium text-sm cursor-pointer">
                 <Upload size={16} />
                 <span>Choose CSV file</span>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                <input type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
               </label>
             </div>
 
@@ -378,13 +387,20 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                         key={row.id}
                         className={classNames(
                           'border rounded-xl p-4 space-y-3',
-                          isValid ? 'border-slate-200 bg-slate-50/30' : 'border-amber-200 bg-amber-50/30'
+                          isValid
+                            ? 'border-slate-200 bg-slate-50/30'
+                            : 'border-amber-200 bg-amber-50/30'
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-slate-600">Member {idx + 1}</span>
+                          <span className="text-sm font-medium text-slate-600">
+                            Member {idx + 1}
+                          </span>
                           {row.parseError && (
-                            <span className="text-xs text-amber-600 flex-1 truncate" title={row.parseError}>
+                            <span
+                              className="text-xs text-amber-600 flex-1 truncate"
+                              title={row.parseError}
+                            >
                               Parse: {row.parseError}
                             </span>
                           )}
@@ -455,7 +471,9 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`reminderFrequency-${row.id}`}
                             label="Reminder"
                             value={row.reminderFrequency}
-                            onChange={(v) => updateRow(row.id, 'reminderFrequency', v as ReminderFrequency)}
+                            onChange={(v) =>
+                              updateRow(row.id, 'reminderFrequency', v as ReminderFrequency)
+                            }
                             options={[
                               { value: 'daily', label: 'Daily' },
                               { value: 'weekly', label: 'Weekly' },
@@ -465,9 +483,7 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             size="sm"
                           />
                         </div>
-                        {rowError && (
-                          <p className="text-xs text-amber-600">{rowError}</p>
-                        )}
+                        {rowError && <p className="text-xs text-amber-600">{rowError}</p>}
                       </div>
                     );
                   })}
@@ -480,10 +496,12 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                 <Upload className="mx-auto text-slate-300 mb-4" size={16} />
                 <p className="text-slate-500 font-medium">No file selected</p>
                 <p className="text-sm text-slate-400 mt-1">
-                  Download the template, fill in your members, then upload the CSV here — or add members manually below.
+                  Download the template, fill in your members, then upload the CSV here — or add
+                  members manually below.
                 </p>
                 <p className="text-xs text-slate-400 mt-2">
-                  Columns: name, phoneNumber, amount, currency, dueDate, paymentStatus, reminderFrequency
+                  Columns: name, phoneNumber, amount, currency, dueDate, paymentStatus,
+                  reminderFrequency
                 </p>
                 <button
                   type="button"

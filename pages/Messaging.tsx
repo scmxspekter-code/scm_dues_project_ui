@@ -1,5 +1,16 @@
 import React, { useRef, useEffect } from 'react';
-import { Send, Clock, History, LayoutTemplate, Smartphone, Users, Eye, Trash2, Search, X } from 'lucide-react';
+import {
+  Send,
+  Clock,
+  History,
+  LayoutTemplate,
+  Smartphone,
+  Users,
+  Eye,
+  Trash2,
+  Search,
+  X,
+} from 'lucide-react';
 import { useMessaging } from '../hooks/useMessaging';
 import { CustomSelect } from '../components/CustomSelect';
 import { RecipientType } from '../hooks/useMessaging';
@@ -18,7 +29,6 @@ export const Messaging: React.FC = () => {
     title,
     setTitle,
     activeTab,
-    setActiveTab,
     messageHistory,
     announcements,
     selectedMember,
@@ -103,7 +113,9 @@ export const Messaging: React.FC = () => {
                       <span className="font-medium text-slate-800 flex-1 truncate">
                         {selectedMember.name}
                       </span>
-                      <span className="text-sm text-slate-500 truncate">{selectedMember.phoneNumber}</span>
+                      <span className="text-sm text-slate-500 truncate">
+                        {selectedMember.phoneNumber}
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -124,37 +136,48 @@ export const Messaging: React.FC = () => {
                         placeholder="Search by name or phone..."
                         value={memberSearchQuery}
                         onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        onFocus={() => memberSearchResults.length > 0 && setMemberSearchDropdownOpen(true)}
+                        onFocus={() =>
+                          memberSearchResults.length > 0 && setMemberSearchDropdownOpen(true)
+                        }
                         leftIcon={<Search size={16} className="text-slate-400" />}
                         size="md"
                         className="bg-slate-50 border-slate-200"
                       />
-                      {memberSearchDropdownOpen && (memberSearchResults.length > 0 || isSearchingMembers) && (
-                        <div className="mt-1 border border-slate-200 rounded-xl bg-white shadow-lg overflow-hidden max-h-60 overflow-y-auto z-10">
-                          {isSearchingMembers ? (
-                            <div className="p-4 text-center text-sm text-slate-500">Searching...</div>
-                          ) : (
-                            memberSearchResults.map((member) => (
-                              <button
-                                key={member.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMember(member);
-                                  setMemberSearchQuery('');
-                                  setMemberSearchDropdownOpen(false);
-                                }}
-                                className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors"
-                              >
-                                <span className="font-medium text-slate-800">{member.name}</span>
-                                <span className="text-sm text-slate-500 truncate">{member.phoneNumber}</span>
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      )}
-                      {memberSearchQuery.trim() && !isSearchingMembers && memberSearchResults.length === 0 && (
-                        <p className="text-sm text-slate-500 mt-1">No members found. Try a different search.</p>
-                      )}
+                      {memberSearchDropdownOpen &&
+                        (memberSearchResults.length > 0 || isSearchingMembers) && (
+                          <div className="mt-1 border border-slate-200 rounded-xl bg-white shadow-lg overflow-hidden max-h-60 overflow-y-auto z-10">
+                            {isSearchingMembers ? (
+                              <div className="p-4 text-center text-sm text-slate-500">
+                                Searching...
+                              </div>
+                            ) : (
+                              memberSearchResults.map((member) => (
+                                <button
+                                  key={member.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedMember(member);
+                                    setMemberSearchQuery('');
+                                    setMemberSearchDropdownOpen(false);
+                                  }}
+                                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                >
+                                  <span className="font-medium text-slate-800">{member.name}</span>
+                                  <span className="text-sm text-slate-500 truncate">
+                                    {member.phoneNumber}
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      {memberSearchQuery.trim() &&
+                        !isSearchingMembers &&
+                        memberSearchResults.length === 0 && (
+                          <p className="text-sm text-slate-500 mt-1">
+                            No members found. Try a different search.
+                          </p>
+                        )}
                     </>
                   )}
                 </div>
@@ -216,109 +239,113 @@ export const Messaging: React.FC = () => {
           </div>
         </div>
 
-          {/* Announcements List */}
-          {activeTab === 'announcements' && (
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
-              <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
-                <LayoutTemplate className="mr-2 text-cyan-600" size={16} />
-                All Announcements
-              </h4>
-              {isLoadingAnnouncements ? (
-                <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
-                  Loading announcements...
-                </div>
-              ) : announcements.length > 0 ? (
-                <div className="space-y-3">
-                  {announcements.map((announcement) => (
-                    <div
-                      key={announcement.id}
-                      className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h5 className="font-bold text-slate-800 truncate">{announcement.title}</h5>
-                            <span
-                              className={classNames(
-                                'px-2 py-1 rounded-full text-[10px] font-bold uppercase',
-                                announcement.status === 'sent'
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : announcement.status === 'failed'
-                                    ? 'bg-red-50 text-red-600'
-                                    : announcement.status === 'sending'
-                                      ? 'bg-amber-50 text-amber-600'
-                                      : 'bg-slate-50 text-slate-600'
-                              )}
-                            >
-                              {announcement.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-600 line-clamp-2 mb-2">
-                            {announcement.content}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                            <span>Target: {announcement.targetType}</span>
-                            <span>Channel: {announcement.channel}</span>
-                            {announcement.sentAt && (
-                              <span>Sent: {formatDate(new Date(announcement.sentAt), 'MMM dd, yyyy')}</span>
+        {/* Announcements List */}
+        {activeTab === 'announcements' && (
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
+            <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
+              <LayoutTemplate className="mr-2 text-cyan-600" size={16} />
+              All Announcements
+            </h4>
+            {isLoadingAnnouncements ? (
+              <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
+                Loading announcements...
+              </div>
+            ) : announcements.length > 0 ? (
+              <div className="space-y-3">
+                {announcements.map((announcement) => (
+                  <div
+                    key={announcement.id}
+                    className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-cyan-200 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h5 className="font-bold text-slate-800 truncate">
+                            {announcement.title}
+                          </h5>
+                          <span
+                            className={classNames(
+                              'px-2 py-1 rounded-full text-[10px] font-bold uppercase',
+                              announcement.status === 'sent'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : announcement.status === 'failed'
+                                  ? 'bg-red-50 text-red-600'
+                                  : announcement.status === 'sending'
+                                    ? 'bg-amber-50 text-amber-600'
+                                    : 'bg-slate-50 text-slate-600'
                             )}
-                          </div>
+                          >
+                            {announcement.status}
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-2 ml-4 shrink-0">
-                          <button
-                            onClick={() => handleViewAnnouncement(announcement.id)}
-                            className="p-2 rounded-lg bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-600 transition-colors"
-                            title="View/Edit"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          {announcement.status === 'draft' && (
-                            <button
-                              onClick={() => sendAnnouncement(announcement.id)}
-                              disabled={apiState.sendAnnouncement}
-                              className="p-2 rounded-lg bg-white hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-colors disabled:opacity-50"
-                              title="Send"
-                            >
-                              <Send size={16} />
-                            </button>
+                        <p className="text-sm text-slate-600 line-clamp-2 mb-2">
+                          {announcement.content}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span>Target: {announcement.targetType}</span>
+                          <span>Channel: {announcement.channel}</span>
+                          {announcement.sentAt && (
+                            <span>
+                              Sent: {formatDate(new Date(announcement.sentAt), 'MMM dd, yyyy')}
+                            </span>
                           )}
-                          <button
-                            onClick={() => handleDeleteAnnouncement(announcement.id)}
-                            disabled={apiState.deleteAnnouncement}
-                            className="p-2 rounded-lg bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors disabled:opacity-50"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
                         </div>
                       </div>
+                      <div className="flex items-center space-x-2 ml-4 shrink-0">
+                        <button
+                          onClick={() => handleViewAnnouncement(announcement.id)}
+                          className="p-2 rounded-lg bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-600 transition-colors"
+                          title="View/Edit"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        {announcement.status === 'draft' && (
+                          <button
+                            onClick={() => sendAnnouncement(announcement.id)}
+                            disabled={apiState.sendAnnouncement}
+                            className="p-2 rounded-lg bg-white hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-colors disabled:opacity-50"
+                            title="Send"
+                          >
+                            <Send size={16} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteAnnouncement(announcement.id)}
+                          disabled={apiState.deleteAnnouncement}
+                          className="p-2 rounded-lg bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
-                  No announcements yet. Create one to get started.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Templates */}
-          {activeTab === 'compose' && (
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
-              <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
-                <LayoutTemplate className="mr-2 text-cyan-600" size={16} />
-                Quick Templates
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <TemplateCard title="Birthday Wish" type="Celebration" />
-                <TemplateCard title="Final Dues Warning" type="Urgent" />
-                <TemplateCard title="AGM Notification" type="Event" />
-                <TemplateCard title="Payment Received" type="System" />
+                  </div>
+                ))}
               </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
+                No announcements yet. Create one to get started.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Templates */}
+        {activeTab === 'compose' && (
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
+            <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
+              <LayoutTemplate className="mr-2 text-cyan-600" size={16} />
+              Quick Templates
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <TemplateCard title="Birthday Wish" type="Celebration" />
+              <TemplateCard title="Final Dues Warning" type="Urgent" />
+              <TemplateCard title="AGM Notification" type="Event" />
+              <TemplateCard title="Payment Received" type="System" />
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
       {/* Stats/History Side */}
       <div className="space-y-4 sm:space-y-6">

@@ -183,7 +183,7 @@ export const Members: React.FC = () => {
                         e.stopPropagation();
                         setSelectedMember(member);
                       }}
-                         className="p-1.5 rounded bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
+                      className="p-1.5 rounded bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
                       title="View"
                     >
                       <Eye size={16} />
@@ -193,7 +193,7 @@ export const Members: React.FC = () => {
                         e.stopPropagation();
                         openEditDrawer(member);
                       }}
-                 className="p-1.5 rounded bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
+                      className="p-1.5 rounded bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
                       title="Edit"
                     >
                       <Pencil size={16} />

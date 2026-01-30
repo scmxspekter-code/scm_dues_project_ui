@@ -18,7 +18,6 @@ export const Celebrations: React.FC = () => {
     handleSendBulkAnniversaries,
   } = useCelebrations();
 
-
   return (
     <div className="space-y-6">
       {/* Header with Tabs */}
@@ -140,8 +139,8 @@ export const Celebrations: React.FC = () => {
               {anniversaries.length > 0 && (
                 <div className="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
                   <p className="text-sm text-slate-600">
-                    <span className="font-bold">{anniversaries.length}</span> upcoming
-                    anniversar{anniversaries.length !== 1 ? 'ies' : 'y'}
+                    <span className="font-bold">{anniversaries.length}</span> upcoming anniversar
+                    {anniversaries.length !== 1 ? 'ies' : 'y'}
                   </p>
                   <button
                     onClick={handleSendBulkAnniversaries}

@@ -31,7 +31,11 @@ export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
     const p = panelRef.current;
     if (!o || !p) return;
     gsap.fromTo(o, { opacity: 0 }, { opacity: 1, duration: DURATION, ease: EASE_OUT });
-    gsap.fromTo(p, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT });
+    gsap.fromTo(
+      p,
+      { scale: 0.95, opacity: 0 },
+      { scale: 1, opacity: 1, duration: DURATION, ease: EASE_OUT }
+    );
   }, [isOpen]);
 
   const handleClose = useCallback(() => {
@@ -112,7 +116,9 @@ export const BulkReminderModal: React.FC<BulkReminderModalProps> = ({
                   <div className="flex flex-col items-center space-y-2">
                     <MessageSquare
                       size={16}
-                      className={selectedChannel === 'whatsapp' ? 'text-emerald-600' : 'text-slate-400'}
+                      className={
+                        selectedChannel === 'whatsapp' ? 'text-emerald-600' : 'text-slate-400'
+                      }
                     />
                     <span
                       className={classNames(

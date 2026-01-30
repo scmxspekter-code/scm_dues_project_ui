@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
 import { Formik, FormikProps } from 'formik';
-import classNames from 'classnames';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
 import { CustomSelect } from './CustomSelect';
@@ -178,15 +177,14 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     type="text"
                     name="name"
                     label={
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Input.label accepts ReactNode; cast for IDE type resolution
-                      (<div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                         <User size={16} className="text-cyan-600" />
                         <span>Full Name</span>
-                      </div>) as any
+                      </div>
                     }
                     value={values.name}
                     onChange={handleChange}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     placeholder="John Doe"
                     error={touched.name ? errors.name : undefined}
                     touched={touched.name}
@@ -197,15 +195,14 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     type="tel"
                     name="phoneNumber"
                     label={
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Input.label accepts ReactNode; cast for IDE type resolution
-                      (<div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                         <Phone size={16} className="text-cyan-600" />
                         <span>Phone Number</span>
-                      </div>) as any
+                      </div>
                     }
                     value={values.phoneNumber}
                     onChange={handleChange}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     placeholder="+2348012345678"
                     error={touched.phoneNumber ? errors.phoneNumber : undefined}
                     touched={touched.phoneNumber}
@@ -243,7 +240,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     onChange={(value) => {
                       setFieldValue('currency', value);
                     }}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     error={touched.currency ? errors.currency : undefined}
                     touched={touched.currency}
                     options={[
@@ -267,7 +264,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     onChange={(value) => {
                       setFieldValue('dueDate', value);
                     }}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     error={touched.dueDate ? errors.dueDate : undefined}
                     touched={touched.dueDate}
                     placeholder="Select due date"
@@ -286,7 +283,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     onChange={(value) => {
                       setFieldValue('paymentStatus', value);
                     }}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     error={touched.paymentStatus ? errors.paymentStatus : undefined}
                     touched={touched.paymentStatus}
                     options={[
@@ -310,7 +307,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     onChange={(value) => {
                       setFieldValue('reminderFrequency', value);
                     }}
-                    onBlur={handleBlur as any}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
                     error={touched.reminderFrequency ? errors.reminderFrequency : undefined}
                     touched={touched.reminderFrequency}
                     options={[

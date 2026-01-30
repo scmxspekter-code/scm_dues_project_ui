@@ -20,7 +20,9 @@ export const usePayments = () => {
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
 
   // Filter state
-  const [statusFilter, setStatusFilter] = useState<'successful' | 'failed' | 'pending' | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<'successful' | 'failed' | 'pending' | undefined>(
+    undefined
+  );
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
 
   // Refs
@@ -44,10 +46,10 @@ export const usePayments = () => {
     try {
       setApiState((prev) => ({ ...prev, getPayments: true }));
       const response = await $api.payments.getPayments(params);
-      
+
       if (isMountedRef.current && response.data) {
         setPayments(response.data);
-        
+
         // Set pagination meta if available
         if (response.meta) {
           setPaginationMeta(response.meta);
@@ -72,7 +74,7 @@ export const usePayments = () => {
   // Fetch payments effect
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     const params: IApiParams = {
       page: currentPage,
       limit: itemsPerPage,
@@ -85,7 +87,6 @@ export const usePayments = () => {
     return () => {
       isMountedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, getPayments]);
 
   // Handlers

@@ -106,9 +106,20 @@ export const PieChartSkeleton: React.FC = () => (
 /** AI / feature banner skeleton – uses pulse on dark background */
 export const AIBannerSkeleton: React.FC = () => (
   <div className="bg-linear-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 shadow-xl shadow-cyan-100 flex items-start gap-4 overflow-hidden">
-    <Skeleton variant="circular" width={56} height={56} className="shrink-0 bg-white/20" animation="pulse" />
+    <Skeleton
+      variant="circular"
+      width={56}
+      height={56}
+      className="shrink-0 bg-white/20"
+      animation="pulse"
+    />
     <div className="flex-1 min-w-0 space-y-2">
-      <Skeleton width={200} height={24} className="rounded-lg bg-white/20 max-w-full" animation="pulse" />
+      <Skeleton
+        width={200}
+        height={24}
+        className="rounded-lg bg-white/20 max-w-full"
+        animation="pulse"
+      />
       <Skeleton width="100%" height={16} className="rounded bg-white/20" animation="pulse" />
       <Skeleton width="85%" height={16} className="rounded bg-white/20" animation="pulse" />
     </div>
@@ -178,9 +189,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
                   ) : (
                     <div className="space-y-2 w-full min-w-0">
                       <Skeleton width="90%" height={16} className="rounded" />
-                      {colIndex === 1 && (
-                        <Skeleton width="60%" height={14} className="rounded" />
-                      )}
+                      {colIndex === 1 && <Skeleton width="60%" height={14} className="rounded" />}
                     </div>
                   )}
                 </div>
@@ -202,13 +211,7 @@ export const DataLoadSkeleton: React.FC<{
     {showBlocks && (
       <div className="flex gap-2 mb-6">
         {[0, 1, 2].map((i) => (
-          <Skeleton
-            key={i}
-            width={12}
-            height={12}
-            variant="circular"
-            className="opacity-60"
-          />
+          <Skeleton key={i} width={12} height={12} variant="circular" className="opacity-60" />
         ))}
       </div>
     )}

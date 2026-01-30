@@ -96,16 +96,15 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
               <>
                 {loadingState ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-3 sm:px-6 py-12 sm:py-20 text-center">
+                    <td
+                      colSpan={columns.length}
+                      className="px-3 sm:px-6 py-12 sm:py-20 text-center"
+                    >
                       {loadingState}
                     </td>
                   </tr>
                 ) : (
-                  <TableSkeleton
-                    columnCount={columns.length}
-                    rowCount={10}
-                    variant="member"
-                  />
+                  <TableSkeleton columnCount={columns.length} rowCount={10} variant="member" />
                 )}
               </>
             ) : data.length === 0 ? (
