@@ -160,7 +160,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-3 ">
             {searchable && (
               <div className="p-2 border-b border-slate-100">
                 <input

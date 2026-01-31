@@ -144,7 +144,7 @@ export const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       )}
 
       <div className="flex gap-2">
-        <div className="text-lg [&_button]:text-sm shrink-0">
+        <div className="text-lg [&_button]:text-sm shrink-0 [&_button]:px-2">
           <CustomSelect
             value={code}
             onChange={handleCodeChange}
@@ -152,10 +152,10 @@ export const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
             size="lg"
             disabled={disabled}
             className={classNames(
-              'w-[100px] px-2 bg-slate-50 border font-medium text-slate-700 ',
+              'w-[100px]  bg-slate-50 border font-medium text-slate-700 ',
               hasError ? 'border-red-300' : 'border-slate-200'
             )}
-            containerClassName="mb-0 h-full"
+            containerClassName="mb-0 h-full "
           />
         </div>
         <input
