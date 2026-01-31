@@ -140,7 +140,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           )}
         >
           <span
-            className={classNames('flex items-center space-x-2 flex-1', {
+            className={classNames('flex items-center space-x-2 flex-1 ', {
               'text-slate-400': !selectedOption,
             })}
           >
@@ -186,7 +186,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     onClick={() => !option.disabled && handleSelect(option.value)}
                     disabled={option.disabled}
                     className={classNames(
-                      'w-full px-4 py-3 text-left flex items-center justify-between hover:bg-slate-50 transition-colors',
+                      'w-full px-4 py-3 text-left  hover:bg-slate-50 transition-colors',
                       {
                         'bg-cyan-50 text-cyan-600': value === option.value,
                         'text-slate-700': value !== option.value,
@@ -199,9 +199,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                       {option.icon && <span className="shrink-0">{option.icon}</span>}
                       <span className="truncate">{option.label}</span>
                     </span>
-                    {value === option.value && (
-                      <Check size={16} className="text-cyan-600 shrink-0 ml-2" />
-                    )}
+                
                   </button>
                 ))
               )}

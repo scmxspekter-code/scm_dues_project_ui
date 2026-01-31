@@ -68,7 +68,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
         <table className={classNames('w-full text-left min-w-[640px] sm:min-w-0', className)}>
           <thead
             className={classNames(
-              'bg-slate-50 border-b border-slate-100 sticky top-0 z-10',
+              'bg-slate-50 border-b border-slate-100 sticky top-0 ',
               headerClassName
             )}
           >

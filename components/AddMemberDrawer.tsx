@@ -5,6 +5,7 @@ import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-r
 import { Formik } from 'formik';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
+import { PhoneNumberInput } from './PhoneNumberInput';
 import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
@@ -147,8 +148,7 @@ export const AddMemberDrawer: React.FC = () => {
                   />
 
                   {/* Phone Number */}
-                  <Input
-                    type="tel"
+                  <PhoneNumberInput
                     name="phoneNumber"
                     label={
                       <div className="flex items-center space-x-2">
@@ -157,9 +157,9 @@ export const AddMemberDrawer: React.FC = () => {
                       </div>
                     }
                     value={values.phoneNumber}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="+2348012345678"
+                    onChange={(value) => setFieldValue('phoneNumber', value)}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
+                    placeholder="8012345678"
                     error={touched.phoneNumber ? errors.phoneNumber : undefined}
                     touched={touched.phoneNumber}
                   />

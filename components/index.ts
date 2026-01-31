@@ -4,6 +4,8 @@ export { CustomSelect } from './CustomSelect';
 export { Dropdown } from './Dropdown';
 export { DatePicker } from './DatePicker';
 export { NumberInput } from './NumberInput';
+export { PhoneNumberInput } from './PhoneNumberInput';
+export type { PhoneNumberInputProps, CountryCodeOption } from './PhoneNumberInput';
 export { Pagination } from './Pagination';
 export { AddMemberDrawer } from './AddMemberDrawer';
 export { MemberDetailDrawer } from './MemberDetailDrawer';

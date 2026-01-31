@@ -15,6 +15,7 @@ import { TrendingUp, Users, AlertCircle, CheckCircle, CreditCard, FileText } fro
 import { useDashboard } from '../hooks/useDashboard';
 import { useAppSelector } from '@/store/hooks';
 import { StatCardSkeleton, ChartSkeleton, PieChartSkeleton } from '../components/Skeleton';
+import { CustomSelect } from '../components/CustomSelect';
 
 const StatCard: React.FC<{
   title: string;
@@ -103,16 +104,17 @@ export const Dashboard: React.FC = () => {
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-8">
               <h4 className="font-bold text-slate-800 text-sm">Dues Collection Trend</h4>
-              <select
+              <CustomSelect
                 value={selectedPeriod}
-                onChange={(e) => {
-                  handlePeriodChange(e.target.value as '6months' | 'year');
-                }}
-                className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 rounded-lg px-3 py-3 outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
-              >
-                <option value="6months">Last 6 Months</option>
-                <option value="year">Last Year</option>
-              </select>
+                onChange={(value) => handlePeriodChange(value as '6months' | 'year')}
+                options={[
+                  { value: '6months', label: 'Last 6 Months' },
+                  { value: 'year', label: 'Last Year' },
+                ]}
+                size="md"
+                className="min-w-[160px] bg-slate-50 border-slate-200 rounded-lg text-sm font-bold"
+                containerClassName="mb-0"
+              />
             </div>
             {chartData.length > 0 ? (
               <div className="h-72 w-full">

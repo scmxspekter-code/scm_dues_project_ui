@@ -116,14 +116,14 @@ export const DefaulterActionModal: React.FC = () => {
       {/* Backdrop */}
       <div
         ref={overlayRef}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto z-50"
         onClick={handleClose}
       />
 
       {/* Modal */}
       <div
         ref={panelRef}
-        className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden pointer-events-auto"
+        className="relative z-50 bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden pointer-events-auto"
       >
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">

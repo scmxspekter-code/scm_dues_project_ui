@@ -5,6 +5,7 @@ import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-r
 import { Formik, FormikProps } from 'formik';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
+import { PhoneNumberInput } from './PhoneNumberInput';
 import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 import { NumberInput } from './NumberInput';
@@ -191,8 +192,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                   />
 
                   {/* Phone Number */}
-                  <Input
-                    type="tel"
+                  <PhoneNumberInput
                     name="phoneNumber"
                     label={
                       <div className="flex items-center space-x-2">
@@ -201,9 +201,9 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                       </div>
                     }
                     value={values.phoneNumber}
-                    onChange={handleChange}
+                    onChange={(value) => setFieldValue('phoneNumber', value)}
                     onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
-                    placeholder="+2348012345678"
+                    placeholder="8012345678"
                     error={touched.phoneNumber ? errors.phoneNumber : undefined}
                     touched={touched.phoneNumber}
                   />
@@ -322,14 +322,14 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     <button
                       type="button"
                       onClick={closeEditDrawer}
-                      className="flex-1 px-6 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 font-medium"
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting || apiState.updateMember}
-                      className="flex-1 px-6 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-3 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting || apiState.updateMember ? 'Updating...' : 'Update Member'}
                     </button>

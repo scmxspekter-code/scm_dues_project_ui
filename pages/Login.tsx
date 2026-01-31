@@ -14,7 +14,7 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-600 rounded-2xl shadow-xl shadow-cyan-200 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-            <ShieldCheck className="text-white" size={24} />
+            <ShieldCheck className="text-white" size={32} />
           </div>
           <h1 className="text-sm font-extrabold text-slate-900 tracking-tight">Sperktar Admin</h1>
           <p className="text-slate-500 mt-2 font-medium">SCM Nigeria Dues Management Portal</p>

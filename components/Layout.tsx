@@ -66,7 +66,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div
           onClick={() => setIsOpen((prev) => !prev)}
           className={classNames(
-            'fixed inset-0 top-0 bg-black/50 z-40 opacity-0 transition-opacity duration-300 ease-out',
+            'fixed inset-0 top-0 bg-black/50 z-10 opacity-0 transition-opacity duration-300 ease-out',
             {
               'opacity-100': isOpen,
             }
@@ -76,9 +76,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Sidebar */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-out
+        fixed inset-y-0 left-0  w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-out
         lg:translate-x-0 lg:static lg:block
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0 z-10' : '-translate-x-full z-0'}
       `}
       >
         <div className="h-full flex flex-col px-2 md:px-6 py-8">
