@@ -5,7 +5,6 @@ import {
   Users,
   CreditCard,
   MessageSquare,
-  Settings,
   LogOut,
   Bell,
   Menu,
@@ -54,7 +53,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { to: '/payments', icon: <CreditCard size={16} />, label: 'Payments' },
     { to: '/messaging', icon: <MessageSquare size={16} />, label: 'Messaging' },
     { to: '/celebrations', icon: <Bell size={16} />, label: 'Celebrations' },
-    { to: '/settings', icon: <Settings size={16} />, label: 'Settings' },
   ];
 
   return (
