@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Download,
@@ -10,6 +10,7 @@ import {
   X,
   Bell,
 } from 'lucide-react';
+import gsap from 'gsap';
 import { DefaulterActionModal } from '../components/DefaulterActionModal';
 import { BulkReminderModal } from '../components/BulkReminderModal';
 import { useDefaulters } from '../hooks/useDefaulters';
@@ -18,13 +19,12 @@ import { Dropdown } from '../components/Dropdown';
 import { Pagination } from '../components/Pagination';
 import { Table } from '@/components/Table';
 import { useAppSelector } from '@/store/hooks';
-import { Member } from '../types';
+import { Member, PaymentStatus } from '../types';
 
 export const Defaulters: React.FC = () => {
   const {
     searchTerm,
     setSearchTerm,
-    setSelectedDefaulter,
     handleExport,
     markAsDefaulted,
     paginationMeta,
@@ -39,9 +39,66 @@ export const Defaulters: React.FC = () => {
     isSendingBulkReminders,
     isBulkReminderModalOpen,
     setIsBulkReminderModalOpen,
+    isMarkingAsDefaulted,
+    markAsPaid,
+    isMarkingAsPaid,
+    setSelectedDefaulter,
   } = useDefaulters();
-
   const { defaulters } = useAppSelector((state) => state.defaulters);
+  const [defaulterToConfirm, setDefaulterToConfirm] = useState<Member | null>(null);
+
+  // GSAP refs for confirmation modal
+  const confirmOverlayRef = useRef<HTMLDivElement | null>(null);
+  const confirmPanelRef = useRef<HTMLDivElement | null>(null);
+
+  // Animate confirmation modal in when a defaulter is set
+  useEffect(() => {
+    if (!defaulterToConfirm) return;
+    const overlay = confirmOverlayRef.current;
+    const panel = confirmPanelRef.current;
+    if (!overlay || !panel) return;
+
+    gsap.fromTo(
+      overlay,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.2, ease: 'power2.out' }
+    );
+    gsap.fromTo(
+      panel,
+      { y: 20, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.25, ease: 'power2.out' }
+    );
+  }, [defaulterToConfirm]);
+
+  const closeConfirmModal = (): void => {
+    const overlay = confirmOverlayRef.current;
+    const panel = confirmPanelRef.current;
+
+    if (!overlay || !panel) {
+      setDefaulterToConfirm(null);
+      return;
+    }
+
+    gsap.to(panel, {
+      y: 20,
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.2,
+      ease: 'power2.in',
+    });
+    gsap.to(overlay, {
+      opacity: 0,
+      duration: 0.2,
+      ease: 'power2.in',
+      onComplete: () => setDefaulterToConfirm(null),
+    });
+  };
+
+  const handleConfirmDefault = async (): Promise<void> => {
+    if (!defaulterToConfirm) return;
+    await markAsDefaulted(defaulterToConfirm.id, defaulterToConfirm.name);
+    closeConfirmModal();
+  };
 
   return (
     <>
@@ -193,6 +250,31 @@ export const Defaulters: React.FC = () => {
                 className: 'px-8 py-5',
               },
               {
+                header: 'Payment Status',
+                headerClassName: 'px-8 py-5 text-[10px]',
+                align: 'center',
+                accessor: (defaulter) => (
+                  defaulter.paymentStatus === PaymentStatus.PAID ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 uppercase tracking-tight">
+                      Paid
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void markAsPaid(defaulter.id);
+                      }}
+                      disabled={isMarkingAsPaid}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-tight"
+                    >
+                      Mark as paid
+                    </button>
+                  )
+                ),
+                className: 'px-8 py-5',
+              },
+              {
                 header: 'Actions',
                 align: 'right',
                 headerClassName: 'px-8 py-5 text-[10px]',
@@ -201,7 +283,7 @@ export const Defaulters: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedDefaulter(defaulter);
+                        setSelectedDefaulter(defaulter, 'history');
                       }}
                       className="p-2 rounded bg-slate-100 text-slate-500 hover:bg-cyan-50 hover:text-cyan-600 transition-all"
                       title="View History"
@@ -211,7 +293,7 @@ export const Defaulters: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        markAsDefaulted(defaulter.id, defaulter.name);
+                        setDefaulterToConfirm(defaulter);
                       }}
                       className="p-2 rounded bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-all"
                       title="Mark as Defaulted"
@@ -221,7 +303,7 @@ export const Defaulters: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedDefaulter(defaulter);
+                        setSelectedDefaulter(defaulter, 'message');
                       }}
                       className="p-2 rounded bg-cyan-600 text-white font-bold text-sm flex items-center space-x-2 hover:bg-cyan-700 shadow-lg shadow-cyan-100 transition-all active:scale-[0.98]"
                     >
@@ -264,6 +346,44 @@ export const Defaulters: React.FC = () => {
         {/* Bulk Reminder Modal */}
       </div>
       <DefaulterActionModal />
+      {defaulterToConfirm && (
+        <div
+          ref={confirmOverlayRef}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        >
+          <div
+            ref={confirmPanelRef}
+            className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm p-6 space-y-4"
+          >
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-800">Mark as defaulted?</h4>
+              <p className="text-xs text-slate-500">
+                Are you sure you want to mark{' '}
+                <span className="font-bold text-slate-800">{defaulterToConfirm.name}</span> as
+                defaulted? This will move them into the defaulters list and update their status.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeConfirmModal}
+                disabled={isMarkingAsDefaulted}
+                className="px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDefault}
+                disabled={isMarkingAsDefaulted}
+                className="px-3 py-2 text-xs font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isMarkingAsDefaulted ? 'Marking...' : 'Yes, mark as defaulted'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BulkReminderModal
         isOpen={isBulkReminderModalOpen}
         onClose={() => setIsBulkReminderModalOpen(false)}

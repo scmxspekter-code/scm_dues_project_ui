@@ -32,9 +32,18 @@ export default () => {
       id: string,
       payload: UpdateMemberPayload
     ): Promise<IApiBaseResponse<Member[]>> => {
-      return customFetch(`/collections/${id}`, {
+      // The collections update endpoint supports bulk updates via a "collections" array.
+      // For the edit modal (single update) we still call it with a single-item array.
+      return customFetch('/collections', {
         method: 'PATCH',
-        data: payload,
+        data: {
+          collections: [
+            {
+              id,
+              ...payload,
+            },
+          ],
+        },
       });
     },
     deleteMember: (id: string): Promise<IApiBaseResponse<void>> => {
@@ -123,14 +132,22 @@ export default () => {
         method: 'POST',
       });
     },
-    getBirthdays: (): Promise<IApiBaseResponse<Member[]>> => {
+    getBirthdays: (params?: {
+      page?: number;
+      limit?: number;
+    }): Promise<IApiBaseResponse<Member[]>> => {
       return customFetch('/collections/birthdays', {
         method: 'GET',
+        params,
       });
     },
-    getAnniversaries: (): Promise<IApiBaseResponse<Member[]>> => {
+    getAnniversaries: (params?: {
+      page?: number;
+      limit?: number;
+    }): Promise<IApiBaseResponse<Member[]>> => {
       return customFetch('/collections/anniversaries', {
         method: 'GET',
+        params,
       });
     },
   };

@@ -168,6 +168,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       {label && (
         <label
           htmlFor={inputId}
+          id={props.name ? `${props.name}-label` : undefined}
           className={classNames('block text-sm font-bold text-slate-700', labelClassName)}
         >
           {label}
@@ -190,7 +191,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
           onKeyDown={handleKeyDown}
           onBlur={onBlur}
           className={classNames(
-            'w-full bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 focus:bg-white transition-all font-medium text-slate-700',
+            'w-full bg-slate-50 disabled:bg-slate-50/60 disabled:cursor-not-allowed disabled:text-slate-400 border rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 focus:bg-white transition-all font-medium text-slate-700',
             // Hide spinner buttons
             '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
             sizeClasses[size],

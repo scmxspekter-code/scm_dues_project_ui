@@ -14,14 +14,50 @@ import classNames from 'classnames';
 import { ICreateMemberPayload, Currency, PaymentStatus, ReminderFrequency } from '@/types';
 import { Input } from './Input';
 import { NumberInput } from './NumberInput';
+import { PhoneNumberInput } from './PhoneNumberInput';
 import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 
-const CSV_HEADERS = 'name,phoneNumber,amount,currency,dueDate,paymentStatus,reminderFrequency';
+const CSV_HEADERS =
+  'name,phoneNumber,amount,currency,dueDate,paymentStatus,reminderFrequency,dob,anniversary';
 
-const SAMPLE_CSV = `${CSV_HEADERS}
-John Doe,+2348012345678,5000,NGN,2024-12-31,pending,monthly
-Jane Smith,+2348098765432,3000,NGN,2024-12-25,pending,daily`;
+const FIRST_NAMES = [
+  'John', 'Jane', 'Chidi', 'Amaka', 'Oluwaseun', 'Ngozi', 'Emeka', 'Funke', 'Ibrahim', 'Amina',
+  'Tunde', 'Blessing', 'Kola', 'Chioma', 'Adebayo', 'Grace', 'Chukwu', 'Adaeze', 'Femi', 'Zainab',
+  'Obinna', 'Ifeanyi', 'Nneka', 'Yusuf', 'Chiamaka', 'Segun', 'Oge', 'Bola', 'Chinedu', 'Folake',
+  'Tosin', 'Chinwe', 'Adewale', 'Nkechi', 'Kayode', 'Amara', 'Uche', 'Bimbo', 'Ola', 'Fatima',
+];
+const LAST_NAMES = [
+  'Okonkwo', 'Adeyemi', 'Nwosu', 'Okafor', 'Eze', 'Obi', 'Okoli', 'Ibrahim', 'Musa', 'Bello',
+  'Ogunleye', 'Oladipo', 'Akande', 'Oluwole', 'Akinola', 'Onyeka', 'Okorie', 'Ezeudu', 'Nnamdi', 'Chukwuma',
+];
+const STATUSES: Array<'pending' | 'paid' | 'failed'> = ['pending', 'paid', 'failed'];
+// API accepts only daily, monthly, yearly (no weekly)
+const BULK_FREQUENCIES: ReminderFrequency[] = [
+  ReminderFrequency.DAILY,
+  ReminderFrequency.MONTHLY,
+  ReminderFrequency.YEARLY,
+];
+
+function buildSampleCSV(): string {
+  const rows: string[] = [CSV_HEADERS];
+  for (let i = 1; i <= 100; i++) {
+    const name = `${FIRST_NAMES[(i - 1) % FIRST_NAMES.length]} ${LAST_NAMES[(i - 1) % LAST_NAMES.length]} ${i}`;
+    // E.164 Nigerian: +234 + 10 digits (e.g. 8012345678)
+    const subscriber = String(8000000000 + (i % 200000000)).padStart(10, '0');
+    const phone = `+234${subscriber}`;
+    const amount = [2500, 3000, 5000, 7500, 10000, 15000, 20000][(i - 1) % 7];
+    const dueDate = `2024-${String(1 + ((i - 1) % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`;
+    const paymentStatus = STATUSES[(i - 1) % STATUSES.length];
+    const reminderFrequency = BULK_FREQUENCIES[(i - 1) % BULK_FREQUENCIES.length];
+    const dob = i % 3 !== 0 ? `19${80 + (i % 20)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}` : '';
+    const anniversary = i % 4 === 0 ? `20${String(15 + (i % 10)).padStart(2, '0')}-${String(1 + (i % 12)).padStart(2, '0')}-01` : '';
+    rows.push([name, phone, amount, 'NGN', dueDate, paymentStatus, reminderFrequency, dob, anniversary].join(','));
+  }
+  return rows.join('\n');
+}
+
+const SAMPLE_CSV = buildSampleCSV();
 
 interface ParsedRow {
   index: number;
@@ -39,6 +75,8 @@ export interface EditableMemberRow {
   dueDate: string;
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
+  dob: string;
+  anniversary: string;
   parseError?: string;
 }
 
@@ -55,11 +93,25 @@ function parseCSV(text: string): string[][] {
 }
 
 function parseRow(row: string[], index: number): ParsedRow {
-  const [name, phoneNumber, amountStr, currency, dueDate, paymentStatus, reminderFrequency] = row;
+  const [
+    name,
+    phoneNumber,
+    amountStr,
+    currency,
+    dueDate,
+    paymentStatus,
+    reminderFrequency,
+    dob,
+    anniversary,
+  ] = row;
   const errors: string[] = [];
 
   if (!name?.trim()) errors.push('Name is required');
   if (!phoneNumber?.trim()) errors.push('Phone number is required');
+  const normalizedPhone = phoneNumber.trim().replace(/^0/, '+234');
+  if (normalizedPhone && !/^\+234[789]\d{9}$/.test(normalizedPhone)) {
+    errors.push('Phone must be a valid Nigerian number (e.g. +2348012345678)');
+  }
   const amount = amountStr ? Number(amountStr) : NaN;
   if (Number.isNaN(amount) || amount < 0) errors.push('Valid amount is required');
   const currencyVal = (currency?.toUpperCase() || 'NGN') as Currency;
@@ -67,9 +119,9 @@ function parseRow(row: string[], index: number): ParsedRow {
   if (!dueDate?.trim()) errors.push('Due date is required');
   const ps = (paymentStatus?.toLowerCase() || 'pending') as PaymentStatus;
   if (!['pending', 'paid', 'failed'].includes(ps)) errors.push('Invalid payment status');
-  const rf = (reminderFrequency?.toLowerCase() || 'monthly') as ReminderFrequency;
-  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(rf))
-    errors.push('Invalid reminder frequency');
+  const rfRaw = (reminderFrequency?.toLowerCase() || 'monthly') as string;
+  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(rfRaw)) errors.push('reminderFrequency must be daily, monthly, or yearly');
+  const rf = (rfRaw === 'weekly' ? 'monthly' : rfRaw) as ReminderFrequency; // API accepts only daily, monthly, yearly
 
   if (errors.length > 0) {
     return { index, data: null, error: errors.join('; ') };
@@ -77,12 +129,14 @@ function parseRow(row: string[], index: number): ParsedRow {
 
   const payload: ICreateMemberPayload = {
     name: name.trim(),
-    phoneNumber: phoneNumber.trim().replace(/^0/, '+234'),
+    phoneNumber: normalizedPhone || phoneNumber.trim().replace(/^0/, '+234'),
     amount: Number(amount),
     currency: currencyVal,
     dueDate: dueDate.trim(),
     paymentStatus: ps,
     reminderFrequency: rf,
+    dob: dob?.trim() || undefined,
+    anniversary: anniversary?.trim() || undefined,
   };
   return { index, data: payload, error: null };
 }
@@ -97,6 +151,8 @@ function createEmptyRow(): EditableMemberRow {
     dueDate: '',
     paymentStatus: PaymentStatus.PENDING,
     reminderFrequency: ReminderFrequency.MONTHLY,
+    dob: '',
+    anniversary: '',
   };
 }
 
@@ -113,6 +169,8 @@ function parsedToEditable(parsed: ParsedRow[]): EditableMemberRow[] {
         dueDate: row.data.dueDate,
         paymentStatus: row.data.paymentStatus,
         reminderFrequency: row.data.reminderFrequency,
+        dob: row.data.dob ?? '',
+        anniversary: row.data.anniversary ?? '',
       };
     }
     return {
@@ -124,6 +182,8 @@ function parsedToEditable(parsed: ParsedRow[]): EditableMemberRow[] {
       dueDate: '',
       paymentStatus: PaymentStatus.PENDING,
       reminderFrequency: ReminderFrequency.MONTHLY,
+      dob: '',
+      anniversary: '',
       parseError: row.error ?? undefined,
     };
   });
@@ -133,6 +193,9 @@ function validateRow(row: EditableMemberRow): string | null {
   const err: string[] = [];
   if (!row.name?.trim()) err.push('Name is required');
   if (!row.phoneNumber?.trim()) err.push('Phone number is required');
+  const normalized = row.phoneNumber.trim().replace(/^0/, '+234');
+  const phone = normalized.startsWith('+') ? normalized : `+234${normalized.replace(/\D/g, '').slice(-10)}`;
+  if (phone && !/^\+234[789]\d{9}$/.test(phone)) err.push('Phone must be a valid Nigerian number (e.g. +2348012345678)');
   const amount = Number(row.amount);
   if (Number.isNaN(amount) || amount < 0) err.push('Valid amount is required');
   if (row.currency !== Currency.NGN) err.push('Currency must be NGN');
@@ -148,14 +211,19 @@ function rowToPayload(row: EditableMemberRow): ICreateMemberPayload | null {
   const err = validateRow(row);
   if (err) return null;
   const amount = Number(row.amount);
+  let phone = row.phoneNumber.trim().replace(/^0/, '+234');
+  if (!phone.startsWith('+')) phone = `+234${phone.replace(/\D/g, '').slice(-10)}`;
+  const reminderFrequency = row.reminderFrequency === ReminderFrequency.WEEKLY ? ReminderFrequency.MONTHLY : row.reminderFrequency;
   return {
     name: row.name.trim(),
-    phoneNumber: row.phoneNumber.trim().replace(/^0/, '+234'),
+    phoneNumber: phone,
     amount,
     currency: row.currency,
     dueDate: row.dueDate.trim(),
     paymentStatus: row.paymentStatus,
-    reminderFrequency: row.reminderFrequency,
+    reminderFrequency,
+    dob: row.dob?.trim() || undefined,
+    anniversary: row.anniversary?.trim() || undefined,
   };
 }
 
@@ -421,12 +489,12 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             placeholder="John Doe"
                             size="sm"
                           />
-                          <Input
-                            type="tel"
+                          <PhoneNumberInput
+                            name={`phone-${row.id}`}
                             label="Phone"
                             value={row.phoneNumber}
-                            onChange={(e) => updateRow(row.id, 'phoneNumber', e.target.value)}
-                            placeholder="+2348012345678"
+                            onChange={(value) => updateRow(row.id, 'phoneNumber', value)}
+                            placeholder="8012345678"
                             size="sm"
                           />
                           <NumberInput
@@ -476,10 +544,25 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             }
                             options={[
                               { value: 'daily', label: 'Daily' },
-                              { value: 'weekly', label: 'Weekly' },
                               { value: 'monthly', label: 'Monthly' },
                               { value: 'yearly', label: 'Yearly' },
                             ]}
+                            size="sm"
+                          />
+                          <DatePicker
+                            name={`dob-${row.id}`}
+                            label="Date of Birth"
+                            value={row.dob}
+                            onChange={(v) => updateRow(row.id, 'dob', v ?? '')}
+                            placeholder="Optional"
+                            size="sm"
+                          />
+                          <DatePicker
+                            name={`anniversary-${row.id}`}
+                            label="Anniversary"
+                            value={row.anniversary}
+                            onChange={(v) => updateRow(row.id, 'anniversary', v ?? '')}
+                            placeholder="Optional"
                             size="sm"
                           />
                         </div>
@@ -501,7 +584,7 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                 </p>
                 <p className="text-xs text-slate-400 mt-2">
                   Columns: name, phoneNumber, amount, currency, dueDate, paymentStatus,
-                  reminderFrequency
+                  reminderFrequency, dob (optional), anniversary (optional)
                 </p>
                 <button
                   type="button"

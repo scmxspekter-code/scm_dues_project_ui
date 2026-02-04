@@ -18,6 +18,8 @@ interface MemberFormValues {
   amount: number | null;
   currency: Currency;
   dueDate: string;
+  dob: string;
+  anniversary: string;
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
 }
@@ -94,6 +96,8 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
     amount: member.amount || 0,
     currency: member.currency || Currency.NGN,
     dueDate: member.dueDate || '',
+    dob: member.dob || '',
+    anniversary: member.anniversary || '',
     paymentStatus: member.paymentStatus || PaymentStatus.PENDING,
     reminderFrequency: member.reminderFrequency || ReminderFrequency.MONTHLY,
   };
@@ -105,9 +109,9 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
       await updateMember(member.id, {
         name: values.name,
         phoneNumber: values.phoneNumber,
-        amount: values.amount || 0,
-        currency: values.currency,
         dueDate: values.dueDate,
+        dob: values.dob || null,
+        anniversary: values.anniversary || null,
         paymentStatus: values.paymentStatus,
         reminderFrequency: values.reminderFrequency,
       });
@@ -211,6 +215,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                   {/* Amount */}
                   <NumberInput
                     name="amount"
+                    disabled
                     label={
                       <div className="flex items-center space-x-2">
                         <DollarSign size={16} className="text-cyan-600" />
@@ -230,6 +235,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                   {/* Currency */}
                   <CustomSelect
                     name="currency"
+                    disabled
                     label={
                       <div className="flex items-center space-x-2">
                         <DollarSign size={16} className="text-cyan-600" />
@@ -268,6 +274,45 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     error={touched.dueDate ? errors.dueDate : undefined}
                     touched={touched.dueDate}
                     placeholder="Select due date"
+                  />
+
+                  {/* Date of Birth */}
+                  <DatePicker
+                    name="dob"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Calendar size={16} className="text-cyan-600" />
+                        <span>Date of Birth</span>
+                      </div>
+                    }
+                    value={values.dob}
+                    onChange={(value) => {
+                      setFieldValue('dob', value ?? '');
+                    }}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
+                    error={touched.dob ? errors.dob : undefined}
+                    touched={touched.dob}
+                    placeholder="Select date of birth (optional)"
+                    position="top"
+                  />
+
+                  {/* Anniversary */}
+                  <DatePicker
+                    name="anniversary"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Calendar size={16} className="text-cyan-600" />
+                        <span>Anniversary</span>
+                      </div>
+                    }
+                    value={values.anniversary}
+                    onChange={(value) => {
+                      setFieldValue('anniversary', value ?? '');
+                    }}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
+                    error={touched.anniversary ? errors.anniversary : undefined}
+                    touched={touched.anniversary}
+                    placeholder="Select anniversary date (optional)"
                   />
 
                   {/* Payment Status */}

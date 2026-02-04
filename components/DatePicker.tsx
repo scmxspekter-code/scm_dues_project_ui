@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, ReactNode } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import classNames from 'classnames';
 
@@ -73,6 +74,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const datePickerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const hasError = touched && !!error;
   const hasLeftIcon = !!leftIcon || true; // Always show calendar icon if no leftIcon provided
@@ -213,9 +216,42 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     setIsOpen(false);
   };
 
+  // Position dropdown before paint; never cover the trigger input, prefer below then above
+  useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current || !portalRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const dropdownWidth = 320;
+    const dropdownHeight = 380;
+    const gap = 8;
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    const spaceBelow = viewportH - (rect.bottom + gap) - 8;
+    const spaceAbove = rect.top - gap - 8;
+    const fitsBelow = spaceBelow >= dropdownHeight;
+    const fitsAbove = spaceAbove >= dropdownHeight;
+    let top: number;
+    if (fitsBelow) {
+      top = rect.bottom + gap;
+    } else if (fitsAbove) {
+      top = rect.top - dropdownHeight - gap;
+    } else {
+      // Not enough space either side without overlapping: prefer below so dropdown never covers input
+      top = rect.bottom + gap;
+    }
+    let left = rect.left;
+    if (left + dropdownWidth > viewportW) left = viewportW - dropdownWidth - 8;
+    if (left < 8) left = 8;
+    const el = portalRef.current;
+    el.style.top = `${top+window.scrollY}px`;
+    el.style.left = `${left+window.scrollX}px`;
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (datePickerRef.current && !datePickerRef.current.contains(target)) {
+        const portal = document.getElementById('datepicker-portal');
+        if (portal && portal.contains(target)) return;
         setIsOpen(false);
         onBlur?.();
       }
@@ -255,6 +291,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         )}
 
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
@@ -295,85 +332,92 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         {/* Hidden input for form compatibility */}
         {name && <input type="hidden" name={name} value={value || ''} />}
 
-        {/* Calendar Dropdown */}
-        {isOpen && (
-          <div className="absolute z-50 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden w-[320px]">
-            {/* Calendar Header */}
-            <div className="p-4 border-b border-slate-100 bg-linear-to-r from-cyan-50 to-blue-50">
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <div className="text-center">
-                  <div className="font-bold text-slate-800">
-                    {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        {/* Calendar Dropdown: portaled with fixed position so parent layout is not affected */}
+        {isOpen &&
+          createPortal(
+            <div
+              ref={portalRef}
+              id="datepicker-portal"
+              className="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden w-[320px]"
+              style={{ top: 0, left: 0 }}
+            >
+              {/* Calendar Header */}
+              <div className="p-4 border-b border-slate-100 bg-linear-to-r from-cyan-50 to-blue-50">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    type="button"
+                    onClick={handlePrevMonth}
+                    className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div className="text-center">
+                    <div className="font-bold text-slate-800">
+                      {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleNextMonth}
+                    className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
                 <button
                   type="button"
-                  onClick={handleNextMonth}
-                  className="p-1.5 rounded-lg hover:bg-white/50 transition-colors text-slate-600"
+                  onClick={handleToday}
+                  className="w-full py-2 px-3 bg-white hover:bg-cyan-50 text-cyan-600 rounded-lg text-sm font-medium transition-colors"
                 >
-                  <ChevronRight size={16} />
+                  Today
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={handleToday}
-                className="w-full py-2 px-3 bg-white hover:bg-cyan-50 text-cyan-600 rounded-lg text-sm font-medium transition-colors"
-              >
-                Today
-              </button>
-            </div>
 
-            {/* Calendar Grid */}
-            <div className="p-4">
-              {/* Days of week header */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {daysOfWeek.map((day) => (
-                  <div key={day} className="text-center text-xs font-bold text-slate-400 py-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
+              {/* Calendar Grid */}
+              <div className="p-4">
+                {/* Days of week header */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {daysOfWeek.map((day) => (
+                    <div key={day} className="text-center text-xs font-bold text-slate-400 py-2">
+                      {day}
+                    </div>
+                  ))}
+                </div>
 
-              {/* Calendar days */}
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map((day, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => day.isCurrentMonth && handleDateSelect(day.date)}
-                    disabled={!day.isCurrentMonth || isDisabled(day.date)}
-                    className={classNames(
-                      'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all',
-                      {
-                        'text-slate-400 cursor-not-allowed':
-                          !day.isCurrentMonth || isDisabled(day.date),
-                        'text-slate-700 hover:bg-slate-100':
-                          day.isCurrentMonth &&
-                          !day.isSelected &&
-                          !day.isToday &&
-                          !isDisabled(day.date),
-                        'bg-cyan-600 text-white font-bold': day.isSelected,
-                        'bg-cyan-50 text-cyan-600 font-bold ring-2 ring-cyan-200':
-                          day.isToday && !day.isSelected,
-                        'hover:bg-cyan-100':
-                          day.isCurrentMonth && !isDisabled(day.date) && !day.isSelected,
-                      }
-                    )}
-                  >
-                    {day.date.getDate()}
-                  </button>
-                ))}
+                {/* Calendar days */}
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => day.isCurrentMonth && handleDateSelect(day.date)}
+                      disabled={!day.isCurrentMonth || isDisabled(day.date)}
+                      className={classNames(
+                        'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all',
+                        {
+                          'text-slate-400 cursor-not-allowed':
+                            !day.isCurrentMonth || isDisabled(day.date),
+                          'text-slate-700 hover:bg-slate-100':
+                            day.isCurrentMonth &&
+                            !day.isSelected &&
+                            !day.isToday &&
+                            !isDisabled(day.date),
+                          'bg-cyan-600 text-white font-bold': day.isSelected,
+                          'bg-cyan-50 text-cyan-600 font-bold ring-2 ring-cyan-200':
+                            day.isToday && !day.isSelected,
+                          'hover:bg-cyan-100':
+                            day.isCurrentMonth && !isDisabled(day.date) && !day.isSelected,
+                        }
+                      )}
+                    >
+                      {day.date.getDate()}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </div>,
+            document.body
+          )}
       </div>
 
       {hasError && <p className="text-xs text-red-500 font-medium mt-1">{error}</p>}

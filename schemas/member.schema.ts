@@ -10,4 +10,6 @@ export const memberSchema = yup.object({
     .oneOf(['pending', 'processing', 'paid', 'failed'])
     .required('Payment status is required'),
   reminderFrequency: yup.string().required('Reminder frequency is required'),
+  dob: yup.string().nullable().optional(),
+  anniversary: yup.string().nullable().optional(),
 });

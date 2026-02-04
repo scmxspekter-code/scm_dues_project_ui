@@ -264,6 +264,8 @@ export interface ICreateMemberPayload {
   dueDate: string;
   paymentStatus: PaymentStatus;
   reminderFrequency: ReminderFrequency;
+  dob?: string | null;
+  anniversary?: string | null;
 }
 
 export interface UpdateMemberPayload {

@@ -27,12 +27,14 @@ interface MemberDetailDrawerProps {
   member: Member | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (member: Member) => void;
 }
 
 export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
   member,
   isOpen: isDrawerOpen,
   onClose: closeDetailDrawer,
+  onEdit,
 }) => {
   const {
     sendReminder,
@@ -325,6 +327,15 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                     {getStatusIcon(member.paymentStatus || PaymentStatus.PENDING)}
                     <span className="capitalize">{member.paymentStatus}</span>
                   </div>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(member)}
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm font-bold text-cyan-700 bg-white border border-cyan-200 rounded-lg hover:bg-cyan-50 transition-colors w-full sm:w-auto"
+                    >
+                      Edit details
+                    </button>
+                  )}
                 </div>
                 {/* Action Buttons - Stack on mobile, horizontal on desktop */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
@@ -407,21 +418,19 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                     </div>
                   </div>
 
-                  {member.dob && (
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 bg-white rounded-lg shrink-0">
-                        <Calendar className="text-cyan-600" size={16} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          Date of Birth
-                        </p>
-                        <p className="text-sm text-slate-800 font-semibold mt-1">
-                          {formatDate(member.dob)}
-                        </p>
-                      </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 bg-white rounded-lg shrink-0">
+                      <Calendar className="text-cyan-600" size={16} />
                     </div>
-                  )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Date of Birth
+                      </p>
+                      <p className="text-sm text-slate-800 font-semibold mt-1">
+                        {formatDate(member.dob)}
+                      </p>
+                    </div>
+                  </div>
 
                   {member.anniversary && (
                     <div className="flex items-start space-x-3 sm:col-span-2">

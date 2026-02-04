@@ -22,6 +22,9 @@ import { debounce } from '@/utils/debounce';
 export type RecipientType = 'defaulters' | 'paid' | 'all' | 'custom';
 export type Channel = 'whatsapp' | 'sms';
 
+const ANNOUNCEMENTS_PAGE_SIZE = 15;
+const HISTORY_PAGE_SIZE = 15;
+
 export const useMessaging = () => {
   const [recipientType, setRecipientType] = useState<RecipientType>('defaulters');
   const [channel, setChannel] = useState<Channel>('whatsapp');
@@ -29,7 +32,13 @@ export const useMessaging = () => {
   const [title, setTitle] = useState('');
   const [activeTab, setActiveTab] = useState<'compose' | 'announcements' | 'history'>('compose');
   const [messageHistory, setMessageHistory] = useState<MessageLog[]>([]);
+  const [pageMessageHistory, setPageMessageHistory] = useState(1);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [pageAnnouncements, setPageAnnouncements] = useState(1);
+  const [hasMoreAnnouncements, setHasMoreAnnouncements] = useState(true);
+  const [isLoadingMoreAnnouncements, setIsLoadingMoreAnnouncements] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
@@ -97,6 +106,31 @@ export const useMessaging = () => {
     }
   }, [recipientType, memberSearchQuery, debouncedGetMembersForSearch]);
 
+  // Refetch announcements when switching to the announcements tab so the list is always fresh
+  useEffect(() => {
+    if (activeTab !== 'announcements') return;
+    let isMounted = true;
+    const refresh = async (): Promise<void> => {
+      try {
+        const res = await getAnnouncements(
+          { page: 1, limit: ANNOUNCEMENTS_PAGE_SIZE },
+          { skipLoadingState: true }
+        );
+        if (isMounted) {
+          setAnnouncements(res.data);
+          setPageAnnouncements(1);
+          setHasMoreAnnouncements(res.hasNextPage);
+        }
+      } catch {
+        // Error already handled in getAnnouncements
+      }
+    };
+    refresh();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab]);
+
   useEffect(() => {
     let isMounted = true;
     isMountedRef.current = true;
@@ -107,9 +141,14 @@ export const useMessaging = () => {
         setIsLoadingAnnouncements(true);
       }
       try {
-        const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
+        const res = await getAnnouncements({
+          page: 1,
+          limit: ANNOUNCEMENTS_PAGE_SIZE,
+        });
         if (isMounted) {
-          setAnnouncements(announcementsData);
+          setAnnouncements(res.data);
+          setPageAnnouncements(1);
+          setHasMoreAnnouncements(res.hasNextPage);
         }
       } catch {
         // Error already handled in hook
@@ -124,9 +163,11 @@ export const useMessaging = () => {
         setIsLoadingHistory(true);
       }
       try {
-        const data = await getMessageLogs({ page: 1, limit: 10 });
+        const res = await getMessageLogs({ page: 1, limit: HISTORY_PAGE_SIZE });
         if (isMounted) {
-          setMessageHistory(data);
+          setMessageHistory(res.data);
+          setPageMessageHistory(1);
+          setHasMoreHistory(res.hasNextPage);
         }
       } catch {
         // Error already handled in hook
@@ -185,10 +226,20 @@ export const useMessaging = () => {
         setMemberSearchResults([]);
         // Refresh data after sending
         try {
-          const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
-          setAnnouncements(announcementsData);
-          const data = await getMessageLogs({ page: 1, limit: 10 });
-          setMessageHistory(data);
+          const res = await getAnnouncements(
+            { page: 1, limit: ANNOUNCEMENTS_PAGE_SIZE },
+            { skipLoadingState: true }
+          );
+          setAnnouncements(res.data);
+          setPageAnnouncements(1);
+          setHasMoreAnnouncements(res.hasNextPage);
+          const historyRes = await getMessageLogs(
+            { page: 1, limit: HISTORY_PAGE_SIZE },
+            { skipLoadingState: true }
+          );
+          setMessageHistory(historyRes.data);
+          setPageMessageHistory(1);
+          setHasMoreHistory(historyRes.hasNextPage);
         } catch {
           // Error already handled in hook
         }
@@ -206,8 +257,13 @@ export const useMessaging = () => {
     }
     try {
       await deleteAnnouncement(id);
-      const announcementsData = await getAnnouncements({ page: 1, limit: 50 });
-      setAnnouncements(announcementsData);
+      const res = await getAnnouncements(
+        { page: 1, limit: ANNOUNCEMENTS_PAGE_SIZE },
+        { skipLoadingState: true }
+      );
+      setAnnouncements(res.data);
+      setPageAnnouncements(1);
+      setHasMoreAnnouncements(res.hasNextPage);
     } catch {
       // Error already handled in hook
     }
@@ -230,14 +286,38 @@ export const useMessaging = () => {
   const refreshHistory = async (): Promise<void> => {
     setIsLoadingHistory(true);
     try {
-      const data = await getMessageLogs({ page: 1, limit: 10 });
-      setMessageHistory(data);
+      const res = await getMessageLogs(
+        { page: 1, limit: HISTORY_PAGE_SIZE },
+        { skipLoadingState: true }
+      );
+      setMessageHistory(res.data);
+      setPageMessageHistory(1);
+      setHasMoreHistory(res.hasNextPage);
     } catch {
       // Error already handled in hook
     } finally {
       setIsLoadingHistory(false);
     }
   };
+
+  const loadMoreHistory = useCallback(async (): Promise<void> => {
+    if (!hasMoreHistory || isLoadingMoreHistory) return;
+    setIsLoadingMoreHistory(true);
+    try {
+      const nextPage = pageMessageHistory + 1;
+      const res = await getMessageLogs(
+        { page: nextPage, limit: HISTORY_PAGE_SIZE },
+        { skipLoadingState: true }
+      );
+      setMessageHistory((prev) => [...prev, ...res.data]);
+      setPageMessageHistory(nextPage);
+      setHasMoreHistory(res.hasNextPage);
+    } catch {
+      // Error already handled in getMessageLogs
+    } finally {
+      setIsLoadingMoreHistory(false);
+    }
+  }, [hasMoreHistory, isLoadingMoreHistory, pageMessageHistory]);
 
   const createAnnouncement = async (
     payload: CreateAnnouncementPayload
@@ -259,11 +339,20 @@ export const useMessaging = () => {
     }
   };
 
-  const getAnnouncements = async (params: IApiParams): Promise<Announcement[]> => {
+  const getAnnouncements = async (
+    params: IApiParams,
+    options?: { skipLoadingState?: boolean }
+  ): Promise<{ data: Announcement[]; hasNextPage: boolean }> => {
+    const limit = params.limit ?? ANNOUNCEMENTS_PAGE_SIZE;
     try {
-      setApiState((prev) => ({ ...prev, getAnnouncements: true }));
-      const { data } = await $api.announcements.getAnnouncements(params);
-      return data || [];
+      if (!options?.skipLoadingState) {
+        setApiState((prev) => ({ ...prev, getAnnouncements: true }));
+      }
+      const response = await $api.announcements.getAnnouncements({ ...params, limit });
+      const data = response.data || [];
+      const hasNextPage =
+        response.meta?.hasNextPage ?? (data.length >= limit);
+      return { data, hasNextPage };
     } catch (error: unknown) {
       if (isApiError(error)) {
         toast.error(error.message || 'Failed to fetch announcements');
@@ -272,9 +361,35 @@ export const useMessaging = () => {
       }
       throw error;
     } finally {
-      setApiState((prev) => ({ ...prev, getAnnouncements: false }));
+      if (!options?.skipLoadingState) {
+        setApiState((prev) => ({ ...prev, getAnnouncements: false }));
+      }
     }
   };
+
+  const loadMoreAnnouncements = useCallback(async (): Promise<void> => {
+    if (!hasMoreAnnouncements || isLoadingMoreAnnouncements) return;
+    setIsLoadingMoreAnnouncements(true);
+    try {
+      const nextPage = pageAnnouncements + 1;
+      const res = await getAnnouncements(
+        { page: nextPage, limit: ANNOUNCEMENTS_PAGE_SIZE },
+        { skipLoadingState: true }
+      );
+      setAnnouncements((prev) => [...prev, ...res.data]);
+      setPageAnnouncements(nextPage);
+      setHasMoreAnnouncements(res.hasNextPage);
+    } catch {
+      // Error already handled in getAnnouncements
+    } finally {
+      setIsLoadingMoreAnnouncements(false);
+    }
+  }, [
+    hasMoreAnnouncements,
+    isLoadingMoreAnnouncements,
+    pageAnnouncements,
+    getAnnouncements,
+  ]);
 
   const getAnnouncementById = async (id: string): Promise<Announcement | undefined> => {
     try {
@@ -316,6 +431,19 @@ export const useMessaging = () => {
       setApiState((prev) => ({ ...prev, sendAnnouncement: true }));
       const { data } = await $api.announcements.sendAnnouncement(id);
       toast.success('Announcement sent successfully');
+      if (data) {
+        try {
+          const res = await getAnnouncements(
+            { page: 1, limit: ANNOUNCEMENTS_PAGE_SIZE },
+            { skipLoadingState: true }
+          );
+          setAnnouncements(res.data);
+          setPageAnnouncements(1);
+          setHasMoreAnnouncements(res.hasNextPage);
+        } catch {
+          // Refetch error is non-blocking
+        }
+      }
       return data;
     } catch (error: unknown) {
       if (isApiError(error)) {
@@ -346,11 +474,20 @@ export const useMessaging = () => {
     }
   };
 
-  const getMessageLogs = async (params: MessageLogParams): Promise<MessageLog[]> => {
+  const getMessageLogs = async (
+    params: MessageLogParams,
+    options?: { skipLoadingState?: boolean }
+  ): Promise<{ data: MessageLog[]; hasNextPage: boolean }> => {
+    const limit = params.limit ?? HISTORY_PAGE_SIZE;
     try {
-      setApiState((prev) => ({ ...prev, getMessageLogs: true }));
-      const { data } = await $api.messaging.getMessageLogs(params);
-      return data || [];
+      if (!options?.skipLoadingState) {
+        setApiState((prev) => ({ ...prev, getMessageLogs: true }));
+      }
+      const response = await $api.messaging.getMessageLogs({ ...params, limit });
+      const data = response.data || [];
+      const hasNextPage =
+        response.meta?.hasNextPage ?? (data.length >= limit);
+      return { data, hasNextPage };
     } catch (error: unknown) {
       if (isApiError(error)) {
         toast.error(error.message || 'Failed to fetch message logs');
@@ -359,7 +496,9 @@ export const useMessaging = () => {
       }
       throw error;
     } finally {
-      setApiState((prev) => ({ ...prev, getMessageLogs: false }));
+      if (!options?.skipLoadingState) {
+        setApiState((prev) => ({ ...prev, getMessageLogs: false }));
+      }
     }
   };
 
@@ -462,7 +601,13 @@ export const useMessaging = () => {
     memberSearchDropdownOpen,
     setMemberSearchDropdownOpen,
     isLoadingHistory,
+    isLoadingMoreHistory,
+    hasMoreHistory,
+    loadMoreHistory,
     isLoadingAnnouncements,
+    isLoadingMoreAnnouncements,
+    hasMoreAnnouncements,
+    loadMoreAnnouncements,
     isSending,
     handleSend,
     handleDeleteAnnouncement,

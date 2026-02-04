@@ -4,7 +4,9 @@ import {
   setDefaulters,
   toggleDefaulterDrawer,
   setSelectedDefaulter as setSelectedDefaulterAction,
+  removeDefaulter,
 } from '@/store/slices/defaultersSlice';
+import type { DefaulterDrawerTab } from '@/store/slices/defaultersSlice';
 import { $api } from '@/api';
 import { IReportParams } from '@/api/defaulter.repository';
 import { useAppDispatch } from '@/store/hooks';
@@ -19,6 +21,7 @@ export const useDefaulters = () => {
     defaulters: false,
     defaultersReport: false,
     markAsDefaulted: false,
+    markAsPaid: false,
     getDefaultersStats: false,
     sendRemindersBulk: false,
   });
@@ -132,22 +135,22 @@ export const useDefaulters = () => {
     }
   };
 
-  const setSelectedDefaulter = (defaulter: Member | null) => {
-    dispatch(setSelectedDefaulterAction(defaulter));
+  const setSelectedDefaulter = (
+    defaulter: Member | null,
+    tab?: DefaulterDrawerTab
+  ) => {
+    if (defaulter === null) {
+      dispatch(setSelectedDefaulterAction(null));
+    } else {
+      dispatch(setSelectedDefaulterAction({ member: defaulter, tab: tab ?? 'history' }));
+    }
   };
 
   const toggleDefaulterDrawerHandler = () => {
     dispatch(toggleDefaulterDrawer());
   };
 
-  const markAsDefaulted = async (id: string, memberName?: string): Promise<void> => {
-    // Show confirmation dialog
-    if (
-      !window.confirm(`Are you sure you want to mark ${memberName || 'this member'} as defaulted?`)
-    ) {
-      return;
-    }
-
+  const markAsDefaulted = async (id: string, _memberName?: string): Promise<void> => {
     try {
       setApiState((prev) => ({ ...prev, markAsDefaulted: true }));
       const { data } = await $api.members.markAsDefaulted(id);
@@ -169,6 +172,27 @@ export const useDefaulters = () => {
       throw error;
     } finally {
       setApiState((prev) => ({ ...prev, markAsDefaulted: false }));
+    }
+  };
+
+  const markAsPaid = async (id: string): Promise<void> => {
+    try {
+      setApiState((prev) => ({ ...prev, markAsPaid: true }));
+      const { data } = await $api.members.markAsPaid(id);
+      if (data) {
+        // Remove this member from the local defaulters list without refetching
+        dispatch(removeDefaulter(id));
+        toast.success('Member marked as paid');
+      }
+    } catch (error: unknown) {
+      if (isApiError(error)) {
+        toast.error(error.message || 'Failed to mark as paid');
+      } else {
+        toast.error('Failed to mark as paid');
+      }
+      throw error;
+    } finally {
+      setApiState((prev) => ({ ...prev, markAsPaid: false }));
     }
   };
 
@@ -298,6 +322,9 @@ export const useDefaulters = () => {
     toggleDefaulterDrawer: toggleDefaulterDrawerHandler,
     handleExport,
     markAsDefaulted,
+    markAsPaid,
+    isMarkingAsDefaulted: apiState.markAsDefaulted,
+    isMarkingAsPaid: apiState.markAsPaid,
     getDefaultersStats,
     currentPage,
     itemsPerPage,

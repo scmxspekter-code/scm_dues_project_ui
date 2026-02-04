@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Member } from '../types';
 import { useMembers } from './useMembers';
 import { useMessaging } from './useMessaging';
+
+const PAGE_SIZE = 15;
 
 export const useCelebrations = () => {
   const { getBirthdays, getAnniversaries, apiState } = useMembers();
@@ -17,6 +19,12 @@ export const useCelebrations = () => {
   const [birthdays, setBirthdays] = useState<Member[]>([]);
   const [anniversaries, setAnniversaries] = useState<Member[]>([]);
   const [activeTab, setActiveTab] = useState<'birthdays' | 'anniversaries'>('birthdays');
+  const [pageBirthdays, setPageBirthdays] = useState(1);
+  const [pageAnniversaries, setPageAnniversaries] = useState(1);
+  const [hasMoreBirthdays, setHasMoreBirthdays] = useState(true);
+  const [hasMoreAnniversaries, setHasMoreAnniversaries] = useState(true);
+  const [isLoadingMoreBirthdays, setIsLoadingMoreBirthdays] = useState(false);
+  const [isLoadingMoreAnniversaries, setIsLoadingMoreAnniversaries] = useState(false);
 
   // Refs
   const isMountedRef = useRef(true);
@@ -30,16 +38,20 @@ export const useCelebrations = () => {
     triggerBulkAnniversary: false,
   };
 
-  // Load data function
-  const loadData = async (): Promise<void> => {
+  // Load initial data (page 1)
+  const loadData = useCallback(async (): Promise<void> => {
     try {
-      const [birthdaysData, anniversariesData] = await Promise.all([
-        getBirthdays(),
-        getAnniversaries(),
+      const [birthdaysRes, anniversariesRes] = await Promise.all([
+        getBirthdays({ page: 1, limit: PAGE_SIZE }),
+        getAnniversaries({ page: 1, limit: PAGE_SIZE }),
       ]);
       if (isMountedRef.current) {
-        setBirthdays(birthdaysData || []);
-        setAnniversaries(anniversariesData || []);
+        setBirthdays(birthdaysRes.data);
+        setAnniversaries(anniversariesRes.data);
+        setPageBirthdays(1);
+        setPageAnniversaries(1);
+        setHasMoreBirthdays(birthdaysRes.hasNextPage);
+        setHasMoreAnniversaries(anniversariesRes.hasNextPage);
       }
     } catch {
       if (isMountedRef.current) {
@@ -47,7 +59,7 @@ export const useCelebrations = () => {
         setAnniversaries([]);
       }
     }
-  };
+  }, [getBirthdays, getAnniversaries]);
 
   // Load initial data effect
   useEffect(() => {
@@ -105,6 +117,42 @@ export const useCelebrations = () => {
     }
   };
 
+  const loadMoreBirthdays = useCallback(async (): Promise<void> => {
+    if (!hasMoreBirthdays || isLoadingMoreBirthdays) return;
+    setIsLoadingMoreBirthdays(true);
+    try {
+      const nextPage = pageBirthdays + 1;
+      const res = await getBirthdays({ page: nextPage, limit: PAGE_SIZE });
+      if (isMountedRef.current) {
+        setBirthdays((prev) => [...prev, ...res.data]);
+        setPageBirthdays(nextPage);
+        setHasMoreBirthdays(res.hasNextPage);
+      }
+    } catch {
+      // Error already handled in getBirthdays
+    } finally {
+      if (isMountedRef.current) setIsLoadingMoreBirthdays(false);
+    }
+  }, [hasMoreBirthdays, isLoadingMoreBirthdays, pageBirthdays, getBirthdays]);
+
+  const loadMoreAnniversaries = useCallback(async (): Promise<void> => {
+    if (!hasMoreAnniversaries || isLoadingMoreAnniversaries) return;
+    setIsLoadingMoreAnniversaries(true);
+    try {
+      const nextPage = pageAnniversaries + 1;
+      const res = await getAnniversaries({ page: nextPage, limit: PAGE_SIZE });
+      if (isMountedRef.current) {
+        setAnniversaries((prev) => [...prev, ...res.data]);
+        setPageAnniversaries(nextPage);
+        setHasMoreAnniversaries(res.hasNextPage);
+      }
+    } catch {
+      // Error already handled in getAnniversaries
+    } finally {
+      if (isMountedRef.current) setIsLoadingMoreAnniversaries(false);
+    }
+  }, [hasMoreAnniversaries, isLoadingMoreAnniversaries, pageAnniversaries, getAnniversaries]);
+
   return {
     // State
     birthdays,
@@ -113,10 +161,16 @@ export const useCelebrations = () => {
     setActiveTab,
     isLoading,
     safeMessagingApiState,
+    hasMoreBirthdays,
+    hasMoreAnniversaries,
+    isLoadingMoreBirthdays,
+    isLoadingMoreAnniversaries,
     // Handlers
     handleSendBirthdayMessage,
     handleSendAnniversaryMessage,
     handleSendBulkBirthdays,
     handleSendBulkAnniversaries,
+    loadMoreBirthdays,
+    loadMoreAnniversaries,
   };
 };

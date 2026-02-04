@@ -72,6 +72,8 @@ export const AddMemberDrawer: React.FC = () => {
     amount: 0,
     currency: Currency.NGN,
     dueDate: '',
+    dob: '' as string,
+    anniversary: '' as string,
     paymentStatus: PaymentStatus.PENDING,
     reminderFrequency: ReminderFrequency.MONTHLY,
   };
@@ -206,8 +208,6 @@ export const AddMemberDrawer: React.FC = () => {
                       { value: 'EUR', label: 'EUR - Euro' },
                     ]}
                   />
-
-                  {/* Due Date */}
                   <DatePicker
                     name="dueDate"
                     label={
@@ -224,6 +224,42 @@ export const AddMemberDrawer: React.FC = () => {
                     error={touched.dueDate ? errors.dueDate : undefined}
                     touched={touched.dueDate}
                     placeholder="Select due date"
+                  />
+
+                  <DatePicker
+                    name="dob"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Calendar size={16} className="text-cyan-600" />
+                        <span>Date of Birth</span>
+                      </div>
+                    }
+                    value={values.dob}
+                    onChange={(value) => {
+                      setFieldValue('dob', value ?? '');
+                    }}
+                    onBlur={handleBlur}
+                    error={touched.dob ? errors.dob : undefined}
+                    touched={touched.dob}
+                    placeholder="Select date of birth (optional)"
+                  />
+
+                  <DatePicker
+                    name="anniversary"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Calendar size={16} className="text-cyan-600" />
+                        <span>Anniversary</span>
+                      </div>
+                    }
+                    value={values.anniversary}
+                    onChange={(value) => {
+                      setFieldValue('anniversary', value ?? '');
+                    }}
+                    onBlur={handleBlur}
+                    error={touched.anniversary ? errors.anniversary : undefined}
+                    touched={touched.anniversary}
+                    placeholder="Select anniversary date (optional)"
                   />
 
                   {/* Payment Status */}

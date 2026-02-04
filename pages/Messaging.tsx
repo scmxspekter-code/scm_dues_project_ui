@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   Send,
-  Clock,
   History,
   LayoutTemplate,
   Smartphone,
@@ -10,13 +9,16 @@ import {
   Trash2,
   Search,
   X,
+  Megaphone,
 } from 'lucide-react';
 import { useMessaging } from '../hooks/useMessaging';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { CustomSelect } from '../components/CustomSelect';
 import { RecipientType } from '../hooks/useMessaging';
 import classNames from 'classnames';
 import { formatDate } from 'date-fns';
 import { Input } from '../components/Input';
+import { Skeleton } from '../components/Skeleton';
 
 export const Messaging: React.FC = () => {
   const {
@@ -29,6 +31,7 @@ export const Messaging: React.FC = () => {
     title,
     setTitle,
     activeTab,
+    setActiveTab,
     messageHistory,
     announcements,
     selectedMember,
@@ -40,7 +43,13 @@ export const Messaging: React.FC = () => {
     memberSearchDropdownOpen,
     setMemberSearchDropdownOpen,
     isLoadingHistory,
+    isLoadingMoreHistory,
+    hasMoreHistory,
+    loadMoreHistory,
     isLoadingAnnouncements,
+    isLoadingMoreAnnouncements,
+    hasMoreAnnouncements,
+    loadMoreAnnouncements,
     isSending,
     handleSend,
     handleDeleteAnnouncement,
@@ -51,6 +60,26 @@ export const Messaging: React.FC = () => {
   } = useMessaging();
   const memberSearchRef = useRef<HTMLDivElement>(null);
 
+  const {
+    sentinelRef: announcementsSentinelRef,
+    scrollContainerRef: announcementsScrollRef,
+  } = useInfiniteScroll({
+    enabled: activeTab === 'announcements',
+    hasMore: hasMoreAnnouncements,
+    isLoading: isLoadingMoreAnnouncements,
+    onLoadMore: loadMoreAnnouncements,
+  });
+
+  const {
+    sentinelRef: historySentinelRef,
+    scrollContainerRef: historyScrollRef,
+  } = useInfiniteScroll({
+    enabled: !isLoadingHistory && messageHistory.length > 0,
+    hasMore: hasMoreHistory,
+    isLoading: isLoadingMoreHistory,
+    onLoadMore: loadMoreHistory,
+  });
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (memberSearchRef.current && !memberSearchRef.current.contains(e.target as Node)) {
@@ -60,12 +89,12 @@ export const Messaging: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [setMemberSearchDropdownOpen]);
-
+const memberName = useMemo(() => selectedMember?.name ?? 'User', [selectedMember]);
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8">
+    <div className="grid   gap-4 sm:gap-6 xl:gap-8">
       {/* Composer Area */}
-      <div className="xl:col-span-2 space-y-4 sm:space-y-6">
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
+      <div className="grid grid-cols-1 xl:grid-cols-5 grid-rows-1  gap-2 grow">
+        <div className="xl:col-span-3  bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
           <h3 className="text-sm font-bold text-slate-800 mb-4 sm:mb-6 flex items-center">
             <Smartphone className="mr-2 text-cyan-600" size={16} />
             Compose Message
@@ -214,11 +243,6 @@ export const Messaging: React.FC = () => {
               ></textarea>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 pt-4">
-              <button className="flex items-center justify-center sm:justify-start space-x-2 text-slate-400 hover:text-slate-600 transition-colors font-medium text-sm py-2 sm:py-0">
-                <Clock size={16} />
-                <span>Schedule for later</span>
-              </button>
               <button
                 onClick={handleSend}
                 disabled={
@@ -235,15 +259,137 @@ export const Messaging: React.FC = () => {
                   {isSending || apiState.sendAnnouncement ? 'Sending...' : 'Send Announcement'}
                 </span>
               </button>
-            </div>
+            
           </div>
+        </div>
+
+        <div className="xl:col-span-2 space-y-4 sm:space-y-6 flex grow min-h-0">
+        <div className="flex flex-col gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 h-full grow min-h-0 ">
+          <h4 className="font-bold text-slate-800  flex items-center text-sm">
+            <History className="mr-2 text-cyan-600" size={16} />
+            Recent History
+          </h4>
+          {isLoadingHistory ? (
+            <div className="py-8 text-center text-slate-400 italic font-medium text-sm xl:h-full flex items-center justify-center h-[calc(100vh-33rem)]">
+              Loading message history...
+            </div>
+          ) : (
+            <div
+              ref={historyScrollRef}
+              className={classNames(
+                'flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-2',
+                {
+                  'max-h-[calc(100vh-33rem)]': recipientType !== 'custom',
+                  'xl:max-h-[calc(100vh-23rem)]': recipientType === 'custom',
+                }
+              )}
+            >
+              {messageHistory.length > 0 ? (
+                <>
+                  {messageHistory.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0 "
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <Smartphone size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-bold text-slate-700 capitalize truncate">
+                          {log.messageType.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-slate-400 wrap-break-words">
+                          To {log.recipientName} • {new Date(log.createdAt).toLocaleString()}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ${
+                              log.status === 'delivered'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : log.status === 'failed'
+                                  ? 'bg-red-50 text-red-600'
+                                  : 'bg-amber-50 text-amber-600'
+                            }`}
+                          >
+                            {log.status}
+                          </span>
+                          <span className="text-[10px] text-slate-400 capitalize">{log.channel}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoadingMoreHistory && (
+                    <div className="py-4 text-center text-slate-400 text-xs font-medium">
+                      Loading more...
+                    </div>
+                  )}
+                  {hasMoreHistory && (
+                    <div ref={historySentinelRef} className="h-4" aria-hidden />
+                  )}
+                </>
+              ) : (
+                <div
+                  className={classNames(
+                    'flex flex-col items-center justify-center text-center py-8 ',
+                    recipientType !== 'custom'
+                      ? 'min-h-[calc(100vh-34rem)]'
+                      : 'min-h-[calc(100vh-24rem)]'
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                    <History className="text-slate-400" size={24} />
+                  </div>
+                  <p className="text-slate-400 italic font-medium text-sm">
+                    No message history yet
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            onClick={refreshHistory}
+            className="w-full py-2 text-xs sm:text-sm font-bold text-white bg-cyan-600 rounded hover:bg-cyan-600/85 transition-colors mt-auto"
+          >
+            Refresh History
+          </button>
+        </div>
+      </div>
+      </div>
+
+      {/* Tabbed content: Compose (Templates) | Announcements */}
+      <div className="flex flex-col gap-4">
+        <div className="flex bg-slate-50 rounded-xl p-1 border border-slate-200 w-fit">
+          <button
+            onClick={() => setActiveTab('compose')}
+            className={classNames(
+              'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors',
+              activeTab === 'compose'
+                ? 'bg-white text-cyan-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-800'
+            )}
+          >
+            <LayoutTemplate size={16} />
+            <span>Compose & Templates</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('announcements')}
+            className={classNames(
+              'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors',
+              activeTab === 'announcements'
+                ? 'bg-white text-cyan-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-800'
+            )}
+          >
+            <Megaphone size={16} />
+            <span>All Announcements</span>
+          </button>
         </div>
 
         {/* Announcements List */}
         {activeTab === 'announcements' && (
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
-            <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
-              <LayoutTemplate className="mr-2 text-cyan-600" size={16} />
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col min-h-0">
+            <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm shrink-0">
+              <Megaphone className="mr-2 text-cyan-600" size={16} />
               All Announcements
             </h4>
             {isLoadingAnnouncements ? (
@@ -251,7 +397,10 @@ export const Messaging: React.FC = () => {
                 Loading announcements...
               </div>
             ) : announcements.length > 0 ? (
-              <div className="space-y-3">
+              <div
+                ref={announcementsScrollRef}
+                className="space-y-3 overflow-y-auto min-h-0 max-h-[calc(100vh-18rem)] pr-1"
+              >
                 {announcements.map((announcement) => (
                   <div
                     key={announcement.id}
@@ -321,6 +470,38 @@ export const Messaging: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {isLoadingMoreAnnouncements && (
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={`announcement-skeleton-${i}`}
+                        className="bg-slate-50 rounded-xl p-4 border border-slate-200"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Skeleton width="40%" height={16} className="rounded" />
+                              <Skeleton width={56} height={20} className="rounded-full" />
+                            </div>
+                            <Skeleton width="90%" height={12} className="rounded" />
+                            <Skeleton width="70%" height={12} className="rounded" />
+                            <div className="flex gap-3">
+                              <Skeleton width={80} height={10} className="rounded" />
+                              <Skeleton width={60} height={10} className="rounded" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Skeleton variant="rectangular" width={36} height={36} className="rounded-lg" />
+                            <Skeleton variant="rectangular" width={36} height={36} className="rounded-lg" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {hasMoreAnnouncements && (
+                  <div ref={announcementsSentinelRef} className="h-4" aria-hidden />
+                )}
               </div>
             ) : (
               <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
@@ -338,82 +519,65 @@ export const Messaging: React.FC = () => {
               Quick Templates
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <TemplateCard title="Birthday Wish" type="Celebration" />
-              <TemplateCard title="Final Dues Warning" type="Urgent" />
-              <TemplateCard title="AGM Notification" type="Event" />
-              <TemplateCard title="Payment Received" type="System" />
+              <TemplateCard
+                title="Birthday Wish"
+                type="Celebration"
+                onClick={() => {
+                  setTitle('Birthday Wish');
+                  setMessage(
+                    `Happy birthday ${selectedMember?.name??'to you'}! Wishing you joy, good health, and many more successful years with SCM Nigeria.`
+                  );
+                }}
+              />
+              <TemplateCard
+                title="Final Dues Warning"
+                type="Urgent"
+                onClick={() => {
+                  setTitle('Final Dues Warning');
+                  setMessage(
+                    `Dear ${memberName}, this is a final reminder that your dues are outstanding. Please make your payment as soon as possible to remain in good standing with SCM Nigeria.`
+                  );
+                }}
+              />
+              <TemplateCard
+                title="AGM Notification"
+                type="Event"
+                onClick={() => {
+                  setTitle('AGM Notification');
+                  setMessage(
+                    `Dear ${memberName}, you are invited to the upcoming Annual General Meeting (AGM). Please check your email or the members portal for date, time, and venue details.`
+                  );
+                }}
+              />
+              <TemplateCard
+                title="Payment Received"
+                type="System"
+                onClick={() => {
+                  setTitle('Payment Received');
+                  setMessage(
+                    `Hello ${memberName}, your payment has been received successfully. Thank you for keeping your dues up to date with SCM Nigeria.`
+                  );
+                }}
+              />
             </div>
           </div>
         )}
-      </div>
-
-      {/* Stats/History Side */}
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 h-full max-h-[600px]">
-          <h4 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
-            <History className="mr-2 text-cyan-600" size={16} />
-            Recent History
-          </h4>
-          {isLoadingHistory ? (
-            <div className="py-8 text-center text-slate-400 italic font-medium text-sm h-full flex items-center justify-center">
-              Loading message history...
-            </div>
-          ) : (
-            <div className="max-h-[400px] sm:max-h-[500px] lg:max-h-[450px] overflow-y-auto space-y-4 pr-2 h-full ">
-              {messageHistory.length > 0 ? (
-                messageHistory.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start space-x-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                      <Smartphone size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-slate-700 capitalize truncate">
-                        {log.messageType.replace('_', ' ')}
-                      </p>
-                      <p className="text-xs text-slate-400 wrap-break-words">
-                        To {log.recipientName} • {new Date(log.createdAt).toLocaleString()}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ${
-                            log.status === 'delivered'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : log.status === 'failed'
-                                ? 'bg-red-50 text-red-600'
-                                : 'bg-amber-50 text-amber-600'
-                          }`}
-                        >
-                          {log.status}
-                        </span>
-                        <span className="text-[10px] text-slate-400 capitalize">{log.channel}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="py-8 text-center text-slate-400 italic font-medium text-sm">
-                  No message history yet
-                </div>
-              )}
-            </div>
-          )}
-          <button
-            onClick={refreshHistory}
-            className="w-full py-2 text-xs sm:text-sm font-bold text-cyan-600 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors mt-auto"
-          >
-            Refresh History
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
-const TemplateCard = ({ title, type }: { title: string; type: string }) => (
-  <div className="p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all cursor-pointer group">
+interface TemplateCardProps {
+  title: string;
+  type: string;
+  onClick: () => void;
+}
+
+const TemplateCard: React.FC<TemplateCardProps> = ({ title, type, onClick }) => (
+  <div
+    className="p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all cursor-pointer group"
+    onClick={onClick}
+  >
     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
       {type}
     </div>

@@ -9,7 +9,9 @@ const EASE_OUT = 'power2.out';
 const EASE_IN = 'power2.in';
 
 export const DefaulterActionModal: React.FC = () => {
-  const { member, isDrawerOpen } = useAppSelector((state) => state.defaulters);
+  const { member, isDrawerOpen, drawerDefaultTab } = useAppSelector(
+    (state) => state.defaulters
+  );
   const {
     toggleDefaulterDrawer,
     reminderHistory,
@@ -27,6 +29,13 @@ export const DefaulterActionModal: React.FC = () => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const isClosingRef = useRef(false);
+
+  // Sync active tab to the requested default when modal opens
+  useEffect(() => {
+    if (isDrawerOpen) {
+      setActiveTab(drawerDefaultTab);
+    }
+  }, [isDrawerOpen, drawerDefaultTab]);
 
   // Enter animation
   useEffect(() => {

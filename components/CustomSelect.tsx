@@ -110,9 +110,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   return (
     <div className={classNames('space-y-2', containerClassName)} ref={selectRef}>
       {label && (
-        <label className={classNames('block text-sm font-bold text-slate-700', labelClassName)}>
+        <div id={name} className={classNames('block text-sm font-bold text-slate-700', labelClassName)}>
           {label}
-        </label>
+        </div>
       )}
 
       <div className="relative">

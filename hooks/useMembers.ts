@@ -426,11 +426,16 @@ export const useMembers = () => {
     }
   };
 
-  const getBirthdays = async (): Promise<Member[]> => {
+  const getBirthdays = async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Member[]; hasNextPage: boolean }> => {
     try {
       setApiState((prev) => ({ ...prev, getBirthdays: true }));
-      const { data } = await $api.members.getBirthdays();
-      return data || [];
+      const response = await $api.members.getBirthdays(params);
+      const data = response.data || [];
+      const hasNextPage = response.meta?.hasNextPage ?? false;
+      return { data, hasNextPage };
     } catch (error: unknown) {
       if (isApiError(error)) {
         toast.error(error.message || 'Failed to fetch birthdays');
@@ -443,11 +448,16 @@ export const useMembers = () => {
     }
   };
 
-  const getAnniversaries = async (): Promise<Member[]> => {
+  const getAnniversaries = async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Member[]; hasNextPage: boolean }> => {
     try {
       setApiState((prev) => ({ ...prev, getAnniversaries: true }));
-      const { data } = await $api.members.getAnniversaries();
-      return data || [];
+      const response = await $api.members.getAnniversaries(params);
+      const data = response.data || [];
+      const hasNextPage = response.meta?.hasNextPage ?? false;
+      return { data, hasNextPage };
     } catch (error: unknown) {
       if (isApiError(error)) {
         toast.error(error.message || 'Failed to fetch anniversaries');

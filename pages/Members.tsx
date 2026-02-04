@@ -236,6 +236,10 @@ export const Members: React.FC = () => {
         member={selectedMember}
         isOpen={isDetailDrawerOpen}
         onClose={closeDetailDrawer}
+        onEdit={(member) => {
+          openEditDrawer(member);
+          closeDetailDrawer();
+        }}
       />
       <EditMemberDrawer
         member={memberForEdit}
