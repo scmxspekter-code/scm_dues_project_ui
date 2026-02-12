@@ -1,5 +1,5 @@
 import { $api } from '@/api';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 import Cookie from 'js-cookie';
 import { useAppDispatch } from '@/store/hooks';
@@ -35,7 +35,7 @@ export const useAuth = () => {
     }
   };
 
-  const me = async (): Promise<void> => {
+  const me = useCallback(async (): Promise<void> => {
     try {
       const { data } = await $api.auth.me();
       dispatch(setUser(data!));
@@ -47,7 +47,7 @@ export const useAuth = () => {
       }
       throw error;
     }
-  };
+  }, [dispatch]);
 
   const updatePassword = async (payload: {
     oldPassword: string;
