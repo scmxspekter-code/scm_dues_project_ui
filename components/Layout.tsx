@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
+  User,
   Users,
   CreditCard,
   MessageSquare,
@@ -53,6 +54,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { to: '/payments', icon: <CreditCard size={16} />, label: 'Payments' },
     { to: '/messaging', icon: <MessageSquare size={16} />, label: 'Messaging' },
     { to: '/celebrations', icon: <Bell size={16} />, label: 'Celebrations' },
+    { to: '/account', icon: <User size={16} />, label: 'Account' },
   ];
 
   return (

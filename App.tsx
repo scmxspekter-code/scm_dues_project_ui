@@ -7,6 +7,7 @@ import { Messaging } from './pages/Messaging';
 import { Defaulters } from './pages/Defaulters';
 import { Payments } from './pages/Payments';
 import { Celebrations } from './pages/Celebrations';
+import { Account } from './pages/Account';
 import { Login } from './pages/Login';
 import { AuthInitializer } from './components/AuthInitializer';
 import { useAppSelector } from './store/hooks';
@@ -28,6 +29,7 @@ const App: React.FC = () => {
               <Route path="/messaging" element={<Messaging />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/celebrations" element={<Celebrations />} />
+              <Route path="/account" element={<Account />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>

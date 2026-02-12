@@ -3,7 +3,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import Cookie from 'js-cookie';
 import { useAppDispatch } from '@/store/hooks';
-import { login, setUser } from '@/store/slices/authSlice';
+import { login, logout, setUser } from '@/store/slices/authSlice';
 import { isApiError } from '@/types';
 
 export const useAuth = () => {
@@ -49,9 +49,31 @@ export const useAuth = () => {
     }
   };
 
+  const updatePassword = async (payload: {
+    oldPassword: string;
+    newPassword: string;
+  }): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await $api.auth.updatePassword(payload);
+      toast.success('Password updated. Please sign in again.');
+      dispatch(logout());
+    } catch (err: unknown) {
+      if (isApiError(err)) {
+        toast.error(err.message || 'Failed to update password');
+      } else {
+        toast.error('Failed to update password');
+      }
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     handleSubmit,
     me,
+    updatePassword,
   };
 };

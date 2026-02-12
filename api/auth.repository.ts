@@ -11,6 +11,12 @@ interface ILoginPayload {
   email: string;
   password: string;
 }
+
+interface IUpdatePasswordPayload {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export default () => {
   return {
     login: (payload: ILoginPayload): Promise<IApiBaseResponse<IAuthenticationResponse>> => {
@@ -21,6 +27,12 @@ export default () => {
     },
     me: (): Promise<IApiBaseResponse<User>> => {
       return customFetch('/authentication/me', { method: 'GET' });
+    },
+    updatePassword: (payload: IUpdatePasswordPayload): Promise<IApiBaseResponse<void>> => {
+      return customFetch('/authentication/password', {
+        method: 'PATCH',
+        data: payload,
+      });
     },
   };
 };
