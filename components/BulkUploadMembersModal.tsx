@@ -87,9 +87,23 @@ interface BulkUploadMembersModalProps {
   isUploading: boolean;
 }
 
+/** E.164: + followed by 7–15 digits (country code + national number) */
+const E164_REGEX = /^\+[1-9]\d{6,14}$/;
+
+function normalizeInternationalPhone(value: string): string {
+  const digitsAndPlus = value.trim().replace(/[^\d+]/g, '');
+  return digitsAndPlus.startsWith('+') ? digitsAndPlus : '+' + digitsAndPlus;
+}
+
+/** Split on comma only when not inside double-quoted field (e.g. "10,000" stays one cell) */
+function splitCSVLine(line: string): string[] {
+  const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+  return parts.map((cell) => cell.trim().replace(/^"|"$/g, ''));
+}
+
 function parseCSV(text: string): string[][] {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  return lines.map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
+  return lines.map(splitCSVLine);
 }
 
 function parseRow(row: string[], index: number): ParsedRow {
@@ -108,14 +122,23 @@ function parseRow(row: string[], index: number): ParsedRow {
 
   if (!name?.trim()) errors.push('Name is required');
   if (!phoneNumber?.trim()) errors.push('Phone number is required');
-  const normalizedPhone = phoneNumber.trim().replace(/^0/, '+234');
-  if (normalizedPhone && !/^\+234[789]\d{9}$/.test(normalizedPhone)) {
-    errors.push('Phone must be a valid Nigerian number (e.g. +2348012345678)');
+  const normalizedPhone = normalizeInternationalPhone(phoneNumber);
+  if (normalizedPhone && !E164_REGEX.test(normalizedPhone)) {
+    errors.push('Phone must be in international format (e.g. +2348012345678 or +14155551234)');
   }
-  const amount = amountStr ? Number(amountStr) : NaN;
+  const cleanedAmountStr = amountStr
+    ? (() => {
+        const digitsAndDot = amountStr.replace(/[^\d.]/g, '');
+        const parts = digitsAndDot.split('.');
+        return parts.length > 1 ? parts[0] + '.' + parts.slice(1).join('') : digitsAndDot;
+      })()
+    : '';
+  const amount = cleanedAmountStr ? Number(cleanedAmountStr) : NaN;
   if (Number.isNaN(amount) || amount < 0) errors.push('Valid amount is required');
-  const currencyVal = (currency?.toUpperCase() || 'NGN') as Currency;
-  if (currencyVal !== Currency.NGN) errors.push('Currency must be NGN');
+  const currencyVal = (currency?.toUpperCase().trim() || 'NGN') as Currency;
+  if (currencyVal.length !== 3 || !/^[A-Z]{3}$/.test(currencyVal)) {
+    errors.push('Currency must be a 3-letter code (e.g. NGN, USD)');
+  }
   if (!dueDate?.trim()) errors.push('Due date is required');
   const ps = (paymentStatus?.toLowerCase() || 'pending') as PaymentStatus;
   if (!['pending', 'paid', 'failed'].includes(ps)) errors.push('Invalid payment status');
@@ -129,7 +152,7 @@ function parseRow(row: string[], index: number): ParsedRow {
 
   const payload: ICreateMemberPayload = {
     name: name.trim(),
-    phoneNumber: normalizedPhone || phoneNumber.trim().replace(/^0/, '+234'),
+    phoneNumber: normalizedPhone,
     amount: Number(amount),
     currency: currencyVal,
     dueDate: dueDate.trim(),
@@ -193,17 +216,19 @@ function validateRow(row: EditableMemberRow): string | null {
   const err: string[] = [];
   if (!row.name?.trim()) err.push('Name is required');
   if (!row.phoneNumber?.trim()) err.push('Phone number is required');
-  const normalized = row.phoneNumber.trim().replace(/^0/, '+234');
-  const phone = normalized.startsWith('+') ? normalized : `+234${normalized.replace(/\D/g, '').slice(-10)}`;
-  if (phone && !/^\+234[789]\d{9}$/.test(phone)) err.push('Phone must be a valid Nigerian number (e.g. +2348012345678)');
+  const phone = normalizeInternationalPhone(row.phoneNumber);
+  if (phone && !E164_REGEX.test(phone)) err.push('Phone must be in international format (e.g. +2348012345678 or +14155551234)');
   const amount = Number(row.amount);
   if (Number.isNaN(amount) || amount < 0) err.push('Valid amount is required');
-  if (row.currency !== Currency.NGN) err.push('Currency must be NGN');
+  const currencyStr = String(row.currency).toUpperCase().trim();
+  if (currencyStr.length !== 3 || !/^[A-Z]{3}$/.test(currencyStr)) {
+    err.push('Currency must be a 3-letter code (e.g. NGN, USD)');
+  }
   if (!row.dueDate?.trim()) err.push('Due date is required');
   if (!['pending', 'paid', 'failed'].includes(row.paymentStatus))
-    err.push('Invalid payment status');
+    err.push('Invalid payment status, options are pending, paid, or failed');
   if (!['daily', 'weekly', 'monthly', 'yearly'].includes(row.reminderFrequency))
-    err.push('Invalid reminder frequency');
+    err.push('Invalid reminder frequency, options are daily, weekly, monthly, or yearly');
   return err.length > 0 ? err.join('; ') : null;
 }
 
@@ -211,14 +236,13 @@ function rowToPayload(row: EditableMemberRow): ICreateMemberPayload | null {
   const err = validateRow(row);
   if (err) return null;
   const amount = Number(row.amount);
-  let phone = row.phoneNumber.trim().replace(/^0/, '+234');
-  if (!phone.startsWith('+')) phone = `+234${phone.replace(/\D/g, '').slice(-10)}`;
+  const phone = normalizeInternationalPhone(row.phoneNumber);
   const reminderFrequency = row.reminderFrequency === ReminderFrequency.WEEKLY ? ReminderFrequency.MONTHLY : row.reminderFrequency;
   return {
     name: row.name.trim(),
     phoneNumber: phone,
     amount,
-    currency: row.currency,
+    currency: String(row.currency).toUpperCase().trim() as Currency,
     dueDate: row.dueDate.trim(),
     paymentStatus: row.paymentStatus,
     reminderFrequency,
@@ -285,6 +309,7 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
       }
       const dataRows = rows.slice(1);
       const parsed = dataRows.map((row, i) => parseRow(row, i + 2));
+      console.log(parsed);
       setEditableRows(parsedToEditable(parsed));
     };
     reader.readAsText(selectedFile);
@@ -507,13 +532,17 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             allowDecimals={true}
                             size="sm"
                           />
-                          <CustomSelect
+                          <Input
                             name={`currency-${row.id}`}
                             label="Currency"
-                            value={row.currency}
-                            onChange={(v) => updateRow(row.id, 'currency', v as Currency)}
-                            options={[{ value: 'NGN', label: 'NGN' }]}
+                            value={String(row.currency).toUpperCase()}
+                            onChange={(e) => {
+                              const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+                              updateRow(row.id, 'currency', v as Currency);
+                            }}
+                            placeholder="NGN"
                             size="sm"
+                            maxLength={3}
                           />
                           <DatePicker
                             name={`dueDate-${row.id}`}
