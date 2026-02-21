@@ -120,12 +120,15 @@ function parseRow(row: string[], index: number): ParsedRow {
   ] = row;
   const errors: string[] = [];
 
-  if (!name?.trim()) errors.push('Name is required');
+  const nameVal = name?.trim() ?? '';
+  if (!nameVal) errors.push('Name is required');
+
+  const normalizedPhone = phoneNumber ? normalizeInternationalPhone(phoneNumber) : '';
   if (!phoneNumber?.trim()) errors.push('Phone number is required');
-  const normalizedPhone = normalizeInternationalPhone(phoneNumber);
-  if (normalizedPhone && !E164_REGEX.test(normalizedPhone)) {
+  else if (normalizedPhone && !E164_REGEX.test(normalizedPhone)) {
     errors.push('Phone must be in international format (e.g. +2348012345678 or +14155551234)');
   }
+
   const cleanedAmountStr = amountStr
     ? (() => {
         const digitsAndDot = amountStr.replace(/[^\d.]/g, '');
@@ -135,33 +138,39 @@ function parseRow(row: string[], index: number): ParsedRow {
     : '';
   const amount = cleanedAmountStr ? Number(cleanedAmountStr) : NaN;
   if (Number.isNaN(amount) || amount < 0) errors.push('Valid amount is required');
-  const currencyVal = (currency?.toUpperCase().trim() || 'NGN') as Currency;
-  if (currencyVal.length !== 3 || !/^[A-Z]{3}$/.test(currencyVal)) {
-    errors.push('Currency must be a 3-letter code (e.g. NGN, USD)');
-  }
-  if (!dueDate?.trim()) errors.push('Due date is required');
-  const ps = (paymentStatus?.toLowerCase() || 'pending') as PaymentStatus;
-  if (!['pending', 'paid', 'failed'].includes(ps)) errors.push('Invalid payment status');
-  const rfRaw = (reminderFrequency?.toLowerCase() || 'monthly') as string;
-  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(rfRaw)) errors.push('reminderFrequency must be daily, monthly, or yearly');
-  const rf = (rfRaw === 'weekly' ? 'monthly' : rfRaw) as ReminderFrequency; // API accepts only daily, monthly, yearly
 
-  if (errors.length > 0) {
-    return { index, data: null, error: errors.join('; ') };
-  }
+  const currencyVal = (currency?.toUpperCase().trim() || 'NGN') as Currency;
+  const currencyOk = currencyVal.length === 3 && /^[A-Z]{3}$/.test(currencyVal);
+  if (!currencyOk) errors.push('Currency must be a 3-letter code (e.g. NGN, USD)');
+
+  const dueDateVal = dueDate?.trim() ?? '';
+  if (!dueDateVal) errors.push('Due date is required');
+
+  const ps = (paymentStatus?.toLowerCase() || 'pending') as PaymentStatus;
+  const psOk = ['pending', 'paid', 'failed'].includes(ps);
+  if (!psOk) errors.push('Invalid payment status');
+
+  const rfRaw = (reminderFrequency?.toLowerCase() || 'monthly') as string;
+  const rfOk = ['daily', 'weekly', 'monthly', 'yearly'].includes(rfRaw);
+  if (!rfOk) errors.push('reminderFrequency must be daily, monthly, or yearly');
+  const rf = (rfRaw === 'weekly' ? 'monthly' : rfRaw) as ReminderFrequency;
 
   const payload: ICreateMemberPayload = {
-    name: name.trim(),
-    phoneNumber: normalizedPhone,
-    amount: Number(amount),
-    currency: currencyVal,
-    dueDate: dueDate.trim(),
-    paymentStatus: ps,
+    name: nameVal,
+    phoneNumber: normalizedPhone || phoneNumber?.trim() || '',
+    amount: Number.isFinite(amount) && amount >= 0 ? amount : 0,
+    currency: currencyOk ? currencyVal : Currency.NGN,
+    dueDate: dueDateVal,
+    paymentStatus: psOk ? ps : PaymentStatus.PENDING,
     reminderFrequency: rf,
     dob: dob?.trim() || undefined,
     anniversary: anniversary?.trim() || undefined,
   };
-  return { index, data: payload, error: null };
+  return {
+    index,
+    data: payload,
+    error: errors.length > 0 ? errors.join('; ') : null,
+  };
 }
 
 function createEmptyRow(): EditableMemberRow {
@@ -194,6 +203,7 @@ function parsedToEditable(parsed: ParsedRow[]): EditableMemberRow[] {
         reminderFrequency: row.data.reminderFrequency,
         dob: row.data.dob ?? '',
         anniversary: row.data.anniversary ?? '',
+        parseError: row.error ?? undefined,
       };
     }
     return {
