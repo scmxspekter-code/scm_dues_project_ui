@@ -29,7 +29,7 @@ export const customFetch = async <T = unknown>(
       const error: ApiError = {
         message: e.response?.data?.message || e.message || 'Request failed',
         status: e.response?.status || 500,
-        error: e.response?.data?.error,
+        error: e.response?.data?.errors,
       };
       throw error;
     } else {

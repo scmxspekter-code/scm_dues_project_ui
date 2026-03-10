@@ -11,7 +11,13 @@ import {
   Plus,
 } from 'lucide-react';
 import classNames from 'classnames';
-import { ICreateMemberPayload, Currency, PaymentStatus, ReminderFrequency } from '@/types';
+import {
+  ICreateMemberPayload,
+  Currency,
+  PaymentStatus,
+  ReminderFrequency,
+  isApiError,
+} from '@/types';
 import { Input } from './Input';
 import { NumberInput } from './NumberInput';
 import { PhoneNumberInput } from './PhoneNumberInput';
@@ -78,6 +84,8 @@ export interface EditableMemberRow {
   dob: string;
   anniversary: string;
   parseError?: string;
+  /** Server-side field errors keyed by field name (e.g. phoneNumber) */
+  fieldErrors?: Record<string, string>;
 }
 
 interface BulkUploadMembersModalProps {
@@ -333,7 +341,24 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
       value: string | Currency | PaymentStatus | ReminderFrequency
     ) => {
       setEditableRows((prev) =>
-        prev.map((r) => (r.id === rowId ? { ...r, [field]: value, parseError: undefined } : r))
+        prev.map((r) => {
+          if (r.id !== rowId) return r;
+
+          const updated: EditableMemberRow = {
+            ...r,
+            [field]: value,
+            parseError: undefined,
+          };
+
+          if (updated.fieldErrors) {
+            const fieldKey = String(field);
+            const { [fieldKey]: _removed, ...rest } = updated.fieldErrors;
+            void _removed;
+            updated.fieldErrors = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+
+          return updated;
+        })
       );
     },
     []
@@ -347,22 +372,84 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
     setEditableRows((prev) => [...prev, createEmptyRow()]);
   }, []);
 
+  const hasServerFieldErrors = (row: EditableMemberRow): boolean =>
+    !!row.fieldErrors && Object.keys(row.fieldErrors).length > 0;
+
   const validPayloads = editableRows
+    .filter((r) => !hasServerFieldErrors(r))
     .map((r) => rowToPayload(r))
     .filter((p): p is ICreateMemberPayload => p !== null);
+
   const validCount = validPayloads.length;
-  const errorCount = editableRows.filter((r) => validateRow(r) !== null).length;
+
+  const errorCount = editableRows.filter((r) => validateRow(r) !== null || hasServerFieldErrors(r))
+    .length;
 
   const handleUpload = useCallback(async () => {
-    const payloads = editableRows
-      .map((r) => rowToPayload(r))
-      .filter((p): p is ICreateMemberPayload => p !== null);
-    if (payloads.length === 0) return;
-    await onUpload(payloads);
-    setFile(null);
-    setEditableRows([]);
-    setFileName('');
-    onClose();
+    const payloadsWithIndex = editableRows
+      .map((row, rowIndex) => {
+        const payload = rowToPayload(row);
+        return payload ? { payload, rowIndex } : null;
+      })
+      .filter(
+        (item): item is { payload: ICreateMemberPayload; rowIndex: number } => item !== null
+      );
+
+    if (payloadsWithIndex.length === 0) return;
+
+    try {
+      await onUpload(payloadsWithIndex.map((p) => p.payload));
+      setFile(null);
+      setEditableRows([]);
+      setFileName('');
+      onClose();
+    } catch (error: unknown) {
+      if (isApiError(error) && error.status === 422) {
+        const serverError = error as { error?: { collections?: Record<string, Record<string, string>> } };
+        const collections = serverError.error?.collections as
+          | Record<string, Record<string, string>>
+          | undefined;
+
+        if (collections) {
+          setEditableRows((prev) => {
+            const next = [...prev];
+
+            Object.entries(collections).forEach(([indexStr, fieldErrors]) => {
+              const collectionIndex = Number(indexStr);
+              if (Number.isNaN(collectionIndex)) return;
+
+              const mapping = payloadsWithIndex[collectionIndex];
+              if (!mapping) return;
+
+              const targetRow = next[mapping.rowIndex];
+              if (!targetRow) return;
+
+              next[mapping.rowIndex] = {
+                ...targetRow,
+                fieldErrors: {
+                  ...(targetRow.fieldErrors || {}),
+                  ...fieldErrors,
+                },
+              };
+            });
+
+            // Bubble rows with server field errors to the top
+            next.sort((a, b) => {
+              const aErr = a.fieldErrors && Object.keys(a.fieldErrors).length > 0;
+              const bErr = b.fieldErrors && Object.keys(b.fieldErrors).length > 0;
+              if (aErr === bErr) return 0;
+              return aErr ? -1 : 1;
+            });
+
+            return next;
+          });
+
+          return;
+        }
+      }
+
+      throw error;
+    }
   }, [editableRows, onUpload, onClose]);
 
   const handleClose = useCallback(() => {
@@ -484,7 +571,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
                   {editableRows.map((row, idx) => {
                     const rowError = validateRow(row);
-                    const isValid = !rowError;
+                    const hasServerErrors = row.fieldErrors && Object.keys(row.fieldErrors).length > 0;
+                    const isValid = !rowError && !hasServerErrors;
                     return (
                       <div
                         key={row.id}
@@ -520,6 +608,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                           <Input
                             label="Name"
                             value={row.name}
+                            error={row.fieldErrors?.name}
+                            touched={!!row.fieldErrors?.name}
                             onChange={(e) => updateRow(row.id, 'name', e.target.value)}
                             placeholder="John Doe"
                             size="sm"
@@ -528,6 +618,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`phone-${row.id}`}
                             label="Phone"
                             value={row.phoneNumber}
+                            error={row.fieldErrors?.phoneNumber}
+                            touched={!!row.fieldErrors?.phoneNumber}
                             onChange={(value) => updateRow(row.id, 'phoneNumber', value)}
                             placeholder="8012345678"
                             size="sm"
@@ -536,6 +628,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`amount-${row.id}`}
                             label="Amount"
                             value={row.amount}
+                            error={row.fieldErrors?.amount}
+                            touched={!!row.fieldErrors?.amount}
                             onChange={(e) => updateRow(row.id, 'amount', e.target.value)}
                             placeholder="5000"
                             min={0}
@@ -546,6 +640,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`currency-${row.id}`}
                             label="Currency"
                             value={String(row.currency).toUpperCase()}
+                            error={row.fieldErrors?.currency}
+                            touched={!!row.fieldErrors?.currency}
                             onChange={(e) => {
                               const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
                               updateRow(row.id, 'currency', v as Currency);
@@ -558,6 +654,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`dueDate-${row.id}`}
                             label="Due Date"
                             value={row.dueDate}
+                            error={row.fieldErrors?.dueDate}
+                            touched={!!row.fieldErrors?.dueDate}
                             onChange={(v) => updateRow(row.id, 'dueDate', v)}
                             placeholder="Select date"
                             size="sm"
@@ -566,6 +664,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`paymentStatus-${row.id}`}
                             label="Status"
                             value={row.paymentStatus}
+                            error={row.fieldErrors?.paymentStatus}
+                            touched={!!row.fieldErrors?.paymentStatus}
                             onChange={(v) => updateRow(row.id, 'paymentStatus', v as PaymentStatus)}
                             options={[
                               { value: 'pending', label: 'Pending' },
@@ -578,6 +678,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`reminderFrequency-${row.id}`}
                             label="Reminder"
                             value={row.reminderFrequency}
+                            error={row.fieldErrors?.reminderFrequency}
+                            touched={!!row.fieldErrors?.reminderFrequency}
                             onChange={(v) =>
                               updateRow(row.id, 'reminderFrequency', v as ReminderFrequency)
                             }
@@ -592,6 +694,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`dob-${row.id}`}
                             label="Date of Birth"
                             value={row.dob}
+                            error={row.fieldErrors?.dob}
+                            touched={!!row.fieldErrors?.dob}
                             onChange={(v) => updateRow(row.id, 'dob', v ?? '')}
                             placeholder="Optional"
                             size="sm"
@@ -600,6 +704,8 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             name={`anniversary-${row.id}`}
                             label="Anniversary"
                             value={row.anniversary}
+                            error={row.fieldErrors?.anniversary}
+                            touched={!!row.fieldErrors?.anniversary}
                             onChange={(v) => updateRow(row.id, 'anniversary', v ?? '')}
                             placeholder="Optional"
                             size="sm"
