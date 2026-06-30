@@ -24,7 +24,8 @@ const membersSlice = createSlice({
       state.filteredMembers = state.members.filter(
         (m) =>
           m.name.toLowerCase().includes(action.payload.toLowerCase()) ||
-          m.phoneNumber.toLowerCase().includes(action.payload.toLowerCase())
+          m.phoneNumber.toLowerCase().includes(action.payload.toLowerCase()) ||
+          (m.email?.toLowerCase().includes(action.payload.toLowerCase()) ?? false)
       );
     },
     addMember: (state, action: PayloadAction<Member[]>) => {
@@ -34,7 +35,8 @@ const membersSlice = createSlice({
         state.filteredMembers = [...state.members].filter(
           (m) =>
             m.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-            m.phoneNumber.toLowerCase().includes(state.searchTerm.toLowerCase())
+            m.phoneNumber.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+            (m.email?.toLowerCase().includes(state.searchTerm.toLowerCase()) ?? false)
         );
       } else {
         state.filteredMembers = state.members;

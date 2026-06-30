@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
-import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
+import { X, User, Phone, Mail, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
 import { Formik, FormikProps } from 'formik';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
@@ -15,6 +15,7 @@ import { Currency, PaymentStatus, ReminderFrequency, Member } from '@/types';
 interface MemberFormValues {
   name: string;
   phoneNumber: string;
+  email: string;
   amount: number | null;
   currency: Currency;
   dueDate: string;
@@ -93,6 +94,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
   const initialValues: MemberFormValues = {
     name: member.name || '',
     phoneNumber: member.phoneNumber || '',
+    email: member.email ?? '',
     amount: member.amount || 0,
     currency: member.currency || Currency.NGN,
     dueDate: member.dueDate || '',
@@ -109,6 +111,7 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
       await updateMember(member.id, {
         name: values.name,
         phoneNumber: values.phoneNumber,
+        email: values.email?.trim() || null,
         dueDate: values.dueDate,
         dob: values.dob || null,
         anniversary: values.anniversary || null,
@@ -210,6 +213,24 @@ export const EditMemberDrawer: React.FC<EditMemberDrawerProps> = ({
                     placeholder="8012345678"
                     error={touched.phoneNumber ? errors.phoneNumber : undefined}
                     touched={touched.phoneNumber}
+                  />
+
+                  {/* Email */}
+                  <Input
+                    type="email"
+                    name="email"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Mail size={16} className="text-cyan-600" />
+                        <span>Email (optional)</span>
+                      </div>
+                    }
+                    value={values.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur as (e?: React.FocusEvent<HTMLElement>) => void}
+                    placeholder="member@example.com"
+                    error={touched.email ? errors.email : undefined}
+                    touched={touched.email}
                   />
 
                   {/* Amount */}

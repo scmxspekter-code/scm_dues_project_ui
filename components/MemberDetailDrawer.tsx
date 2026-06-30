@@ -4,6 +4,7 @@ import {
   X,
   User,
   Phone,
+  Mail,
   Calendar,
   DollarSign,
   CreditCard,
@@ -403,6 +404,25 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                       </a>
                     </div>
                   </div>
+
+                  {member.email && (
+                    <div className="flex items-start space-x-3">
+                      <div className="p-2 bg-white rounded-lg shrink-0">
+                        <Mail className="text-cyan-600" size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          Email
+                        </p>
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="text-sm text-slate-800 font-semibold mt-1 hover:text-cyan-600 transition-colors break-all"
+                        >
+                          {member.email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-start space-x-3">
                     <div className="p-2 bg-white rounded-lg shrink-0">

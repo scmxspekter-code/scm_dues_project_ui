@@ -25,7 +25,7 @@ import { CustomSelect } from './CustomSelect';
 import { DatePicker } from './DatePicker';
 
 const CSV_HEADERS =
-  'name,phoneNumber,amount,currency,dueDate,paymentStatus,reminderFrequency,dob,anniversary';
+  'name,phoneNumber,email,amount,currency,dueDate,paymentStatus,reminderFrequency,dob,anniversary';
 
 const FIRST_NAMES = [
   'John', 'Jane', 'Chidi', 'Amaka', 'Oluwaseun', 'Ngozi', 'Emeka', 'Funke', 'Ibrahim', 'Amina',
@@ -58,7 +58,8 @@ function buildSampleCSV(): string {
     const reminderFrequency = BULK_FREQUENCIES[(i - 1) % BULK_FREQUENCIES.length];
     const dob = i % 3 !== 0 ? `19${80 + (i % 20)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}` : '';
     const anniversary = i % 4 === 0 ? `20${String(15 + (i % 10)).padStart(2, '0')}-${String(1 + (i % 12)).padStart(2, '0')}-01` : '';
-    rows.push([name, phone, amount, 'NGN', dueDate, paymentStatus, reminderFrequency, dob, anniversary].join(','));
+    const email = i % 2 === 0 ? `member${i}@example.com` : '';
+    rows.push([name, phone, email, amount, 'NGN', dueDate, paymentStatus, reminderFrequency, dob, anniversary].join(','));
   }
   return rows.join('\n');
 }
@@ -76,6 +77,7 @@ export interface EditableMemberRow {
   id: string;
   name: string;
   phoneNumber: string;
+  email: string;
   amount: string;
   currency: Currency;
   dueDate: string;
@@ -97,6 +99,7 @@ interface BulkUploadMembersModalProps {
 
 /** E.164: + followed by 7–15 digits (country code + national number) */
 const E164_REGEX = /^\+[1-9]\d{6,14}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function normalizeInternationalPhone(value: string): string {
   const digitsAndPlus = value.trim().replace(/[^\d+]/g, '');
@@ -118,6 +121,7 @@ function parseRow(row: string[], index: number): ParsedRow {
   const [
     name,
     phoneNumber,
+    email,
     amountStr,
     currency,
     dueDate,
@@ -135,6 +139,11 @@ function parseRow(row: string[], index: number): ParsedRow {
   if (!phoneNumber?.trim()) errors.push('Phone number is required');
   else if (normalizedPhone && !E164_REGEX.test(normalizedPhone)) {
     errors.push('Phone must be in international format (e.g. +2348012345678 or +14155551234)');
+  }
+
+  const emailVal = email?.trim() ?? '';
+  if (emailVal && !EMAIL_REGEX.test(emailVal)) {
+    errors.push('Invalid email address');
   }
 
   const cleanedAmountStr = amountStr
@@ -166,6 +175,7 @@ function parseRow(row: string[], index: number): ParsedRow {
   const payload: ICreateMemberPayload = {
     name: nameVal,
     phoneNumber: normalizedPhone || phoneNumber?.trim() || '',
+    email: emailVal || undefined,
     amount: Number.isFinite(amount) && amount >= 0 ? amount : 0,
     currency: currencyOk ? currencyVal : Currency.NGN,
     dueDate: dueDateVal,
@@ -186,6 +196,7 @@ function createEmptyRow(): EditableMemberRow {
     id: `row-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     name: '',
     phoneNumber: '',
+    email: '',
     amount: '',
     currency: Currency.NGN,
     dueDate: '',
@@ -204,6 +215,7 @@ function parsedToEditable(parsed: ParsedRow[]): EditableMemberRow[] {
         id,
         name: row.data.name,
         phoneNumber: row.data.phoneNumber,
+        email: row.data.email ?? '',
         amount: String(row.data.amount),
         currency: row.data.currency,
         dueDate: row.data.dueDate,
@@ -218,6 +230,7 @@ function parsedToEditable(parsed: ParsedRow[]): EditableMemberRow[] {
       id,
       name: '',
       phoneNumber: '',
+      email: '',
       amount: '',
       currency: Currency.NGN,
       dueDate: '',
@@ -236,6 +249,8 @@ function validateRow(row: EditableMemberRow): string | null {
   if (!row.phoneNumber?.trim()) err.push('Phone number is required');
   const phone = normalizeInternationalPhone(row.phoneNumber);
   if (phone && !E164_REGEX.test(phone)) err.push('Phone must be in international format (e.g. +2348012345678 or +14155551234)');
+  const emailVal = row.email?.trim() ?? '';
+  if (emailVal && !EMAIL_REGEX.test(emailVal)) err.push('Invalid email address');
   const amount = Number(row.amount);
   if (Number.isNaN(amount) || amount < 0) err.push('Valid amount is required');
   const currencyStr = String(row.currency).toUpperCase().trim();
@@ -259,6 +274,7 @@ function rowToPayload(row: EditableMemberRow): ICreateMemberPayload | null {
   return {
     name: row.name.trim(),
     phoneNumber: phone,
+    email: emailVal || undefined,
     amount,
     currency: String(row.currency).toUpperCase().trim() as Currency,
     dueDate: row.dueDate.trim(),
@@ -624,6 +640,16 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                             placeholder="8012345678"
                             size="sm"
                           />
+                          <Input
+                            type="email"
+                            label="Email (optional)"
+                            value={row.email}
+                            error={row.fieldErrors?.email}
+                            touched={!!row.fieldErrors?.email}
+                            onChange={(e) => updateRow(row.id, 'email', e.target.value)}
+                            placeholder="member@example.com"
+                            size="sm"
+                          />
                           <NumberInput
                             name={`amount-${row.id}`}
                             label="Amount"
@@ -728,7 +754,7 @@ export const BulkUploadMembersModal: React.FC<BulkUploadMembersModalProps> = ({
                   members manually below.
                 </p>
                 <p className="text-xs text-slate-400 mt-2">
-                  Columns: name, phoneNumber, amount, currency, dueDate, paymentStatus,
+                  Columns: name, phoneNumber, email, amount, currency, dueDate, paymentStatus,
                   reminderFrequency, dob (optional), anniversary (optional)
                 </p>
                 <button

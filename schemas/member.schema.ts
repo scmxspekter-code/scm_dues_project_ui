@@ -2,6 +2,12 @@ import * as yup from 'yup';
 export const memberSchema = yup.object({
   name: yup.string().required('Name is required'),
   phoneNumber: yup.string().required('Phone number is required'),
+  email: yup
+    .string()
+    .transform((v) => (v === '' ? null : v))
+    .nullable()
+    .optional()
+    .email('Invalid email address'),
   amount: yup.number().positive('Amount must be positive').required('Amount is required'),
   currency: yup.string().required('Currency is required'),
   dueDate: yup.string().required('Due date is required'),

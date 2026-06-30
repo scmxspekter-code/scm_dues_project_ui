@@ -161,6 +161,7 @@ export const useMembers = () => {
       const normalized = payloads.map((p) => ({
         ...p,
         phoneNumber: (p.phoneNumber || '').replace(/^0/, '+234'),
+        email: p.email?.trim() || null,
       }));
       await $api.members.createMember(normalized);
       const refreshParams: IApiParams = {
@@ -191,7 +192,11 @@ export const useMembers = () => {
   ): Promise<void> => {
     try {
       setApiState((prev) => ({ ...prev, createMember: true }));
-      const newPayload = { ...payload, phoneNumber: payload.phoneNumber.replace(/^0/, '+234') };
+      const newPayload = {
+        ...payload,
+        phoneNumber: payload.phoneNumber.replace(/^0/, '+234'),
+        email: payload.email?.trim() || null,
+      };
       await $api.members.createMember([newPayload]);
       dispatch(toggleAddMember());
 

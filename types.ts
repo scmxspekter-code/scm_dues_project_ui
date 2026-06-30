@@ -118,6 +118,7 @@ export interface Member {
   id: string;
   name: string;
   phoneNumber: string;
+  email: string | null;
   amount: number;
   currency: Currency;
   paymentProvider: PaymentProvider;
@@ -259,6 +260,7 @@ export interface BulkMessageResponse {
 export interface ICreateMemberPayload {
   name: string;
   phoneNumber: string;
+  email?: string | null;
   amount: number;
   currency: Currency;
   dueDate: string;
@@ -271,6 +273,7 @@ export interface ICreateMemberPayload {
 export interface UpdateMemberPayload {
   name?: string;
   phoneNumber?: string;
+  email?: string | null;
   amount?: number;
   currency?: Currency;
   dueDate?: string;

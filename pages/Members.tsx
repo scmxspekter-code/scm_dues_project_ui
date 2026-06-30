@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Plus, Phone, Link2, Upload, Eye, Pencil } from 'lucide-react';
+import { Search, Filter, Plus, Phone, Mail, Link2, Upload, Eye, Pencil } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { AddMemberDrawer } from '../components/AddMemberDrawer';
 import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
@@ -170,6 +170,16 @@ export const Members: React.FC = () => {
                     >
                       <Phone size={16} />
                     </a>
+                    {member.email && (
+                      <a
+                        href={`mailto:${member.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded bg-slate-100 text-slate-500 hover:text-cyan-600 transition-colors"
+                        title={`Email ${member.email}`}
+                      >
+                        <Mail size={16} />
+                      </a>
+                    )}
                   </div>
                 ),
               },

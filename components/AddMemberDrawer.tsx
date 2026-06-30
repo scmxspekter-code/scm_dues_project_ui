@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
-import { X, User, Phone, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
+import { X, User, Phone, Mail, DollarSign, Calendar, CreditCard, Bell } from 'lucide-react';
 import { Formik } from 'formik';
 import { useMembers } from '@/hooks/useMembers';
 import { Input } from './Input';
@@ -69,6 +69,7 @@ export const AddMemberDrawer: React.FC = () => {
   const initialValues = {
     name: '',
     phoneNumber: '',
+    email: '',
     amount: 0,
     currency: Currency.NGN,
     dueDate: '',
@@ -164,6 +165,24 @@ export const AddMemberDrawer: React.FC = () => {
                     placeholder="8012345678"
                     error={touched.phoneNumber ? errors.phoneNumber : undefined}
                     touched={touched.phoneNumber}
+                  />
+
+                  {/* Email */}
+                  <Input
+                    type="email"
+                    name="email"
+                    label={
+                      <div className="flex items-center space-x-2">
+                        <Mail size={16} className="text-cyan-600" />
+                        <span>Email (optional)</span>
+                      </div>
+                    }
+                    value={values.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="member@example.com"
+                    error={touched.email ? errors.email : undefined}
+                    touched={touched.email}
                   />
 
                   {/* Amount */}
